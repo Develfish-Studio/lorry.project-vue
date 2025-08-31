@@ -1,0 +1,7 @@
+dependencies:
+  lorry.utils:
+    path: ../utils
+  lorry.testing:
+    path: ../testing
+  lorry.project:
+    path: ../project

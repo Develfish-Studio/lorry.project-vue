@@ -1,0 +1,108 @@
+{%- if request.props | filter(attribute='name', value='token') | length > 0 %}
+import { useAuthStore } from "../store/authStore";
+{%- endif %}
+import { useAxiosAutoRequest } from '../hooks/useAxiosAutoRequest';
+import { {{request.camel_name}}Request } from '../requests/{{request.camel_name}}Request'
+{%- if request is containing('structure') %}
+import { Structure{{request.structure.pascal_name}} } from '../structures/Structure{{request.structure.pascal_name}}'
+{%- endif %}
+
+export type Query{{query.pascal_name}}Props = {
+  {%- if props | length > 0 %}
+  {%- for prop in props %}
+  {{prop.camel_name}}?: {{prop.ts_type}}
+  {%- endfor %}
+  {%- else %}
+  // yet nothing
+  {%- endif %}
+}
+
+export type Query{{query.pascal_name}}Filter = {
+  {%- if filters | length > 0 %}
+  {%- for f in filters %}
+  {{f.filter.camel_name}}?: {{f.filter.ts_type}},
+  {%- endfor %}
+  {%- else %}
+  // yet nothing
+  {%- endif %}
+}
+
+export type Query{{query.pascal_name}}Sorter = {
+  {%- if sorters | length > 0 %}
+  {%- for s in sorters %}
+  {{s.sorter.camel_name}}?: 'asc' | 'desc',
+  {%- endfor %}
+  {%- else %}
+  // yet nothing
+  {%- endif %}
+}
+
+{%- if filters | length > 0 %}
+const mapping: Record<string, any> = {
+  {%- for f in filters %}
+  {{f.filter.camel_name}}: '{{f.filter.path}}',
+  {%- endfor %}
+}
+{%- endif %}
+
+export function useQuery{{query.pascal_name}}(
+  // @ts-ignore
+  props: Query{{query.pascal_name}}Props,
+  // @ts-ignore
+  sort?: Query{{query.pascal_name}}Sorter,
+  // @ts-ignore
+  filter?: Query{{query.pascal_name}}Filter
+) {
+  const authStore = useAuthStore()
+
+  return useAxiosAutoRequest<{% if request is containing('structure') %}Structure{{request.structure.pascal_name}}{% else %}any{% endif %}>(async () => {
+    {%- if request.props | filter(attribute='name', value='token') | length > 0 %}
+    const token = await authStore.requireToken()
+    {%- endif %}
+
+    {%- if request.props | filter(attribute='name', value='payload') | length > 0 %}
+    const payload: Record<string, any> = {% if request is containing('body') %}{{ request.body | json_encode }}{% else %}{}{% endif %}
+    {%- if filters | length > 0 %}
+    if (filter != null) {
+      for (const [k, v] of Object.entries(filter)) {
+        if (v != undefined) {
+          payload[mapping[k]] = v
+        }
+      }
+    }
+    {%- endif %}
+    {%- endif %}
+
+    {%- if request.props | filter(attribute='name', value='query') | length > 0 %}
+    {# Blank line #}
+    const sortArray: string[] = []
+    if (sort != null) {
+      for (const [k, v] of Object.entries(sort)) {
+        if (v != null) {
+          sortArray.push(`${k},${v}`)
+        }
+      }
+    }
+
+    const query: Record<string, any> = {% if request is containing('query') %}{{ request.query | json_encode }}{% else %}{}{% endif %}
+    if (sortArray.length > 0) {
+      query.sort = sortArray
+    }
+    {%- endif %}
+
+    return {{request.camel_name}}Request({
+      {%- if request.props | filter(attribute='name', value='token') | length > 0 %}
+      token,
+      {%- endif %}
+      {%- if request.props | filter(attribute='name', value='query') | length > 0 %}
+      query,
+      {%- endif %}
+      {%- if request.props | filter(attribute='name', value='payload') | length > 0 %}
+      payload,
+      {%- endif %}
+      {%- for prop in props %}
+      {{prop.camel_name}}: props.{{prop.camel_name}}!,
+      {%- endfor %}
+    })
+  })
+}

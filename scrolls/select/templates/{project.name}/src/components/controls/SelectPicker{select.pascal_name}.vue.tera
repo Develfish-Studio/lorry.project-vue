@@ -1,0 +1,69 @@
+<script setup lang="ts">
+import { computed } from 'vue';
+import { {{request.camel_name}}Request } from '../../requests/{{request.camel_name}}Request'
+import { useAuthStore } from '../../store/authStore';
+import { useAxiosAutoRequest } from '../../hooks/useAxiosAutoRequest';
+import PlatformDialogFilter, { type Option } from '../dialogs/PlatformDialogFilter.vue';
+
+type IHaveId = {
+  {{select.field_id.name}}: {{select.field_id.ts_type}}
+}
+
+type IHaveName = {
+  {%- if select is containing('field_name') %}
+  {{select.field_name.name}}?: {{select.field_name.ts_type}}
+  {%- endif %}
+}
+
+type IHaveDescription = {
+  {%- if select is containing('field_description') %}
+  {{select.field_description.name}}?: {{select.field_description.ts_type}}
+  {%- endif %}
+}
+
+export type ResponseDataRow = IHaveId & IHaveName & IHaveDescription
+
+export type ResponseData = {
+  content: ResponseDataRow[]
+}
+
+const model = defineModel<ResponseDataRow | undefined>()
+
+const emit = defineEmits<{
+  (e: 'change:option', value: Option): void
+}>()
+
+const authStore = useAuthStore()
+
+const { state } = useAxiosAutoRequest<ResponseData>(async () => {
+  const token = await authStore.requireToken()
+  return {{request.camel_name}}Request({
+    token,
+  })
+})
+
+const options = computed(() => {
+  const items = state.data?.content || []
+  return items.map(item => ({
+    key: `item-${item.{{select.field_id.name}}}`,
+    title: item.{{select.field_name.name}},
+    {%- if select is containing('field_description') %}
+    {{select.field_description.name}}: item.description,
+    {%- endif %}
+    value: item.{{select.field_id.name}}
+  }))
+})
+
+</script>
+
+<template>
+  <PlatformDialogFilter
+    title="{{select.title_name}}"
+    :is-loading="state.isLoading"
+    :is-loaded="state.isLoaded"
+    :is-failed="state.isFailed"
+    :options="options"
+    v-model="model"
+    @change:option="value => emit('change:option', value)"
+  />
+</template>

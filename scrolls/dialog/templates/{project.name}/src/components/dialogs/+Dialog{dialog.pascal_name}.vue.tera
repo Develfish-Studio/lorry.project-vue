@@ -1,0 +1,215 @@
+<script setup lang="ts">
+{%- if fields | length > 0 %}
+import { inject, reactive, ref, onMounted } from 'vue';
+{%- else %}
+import { inject } from 'vue';
+import Skeleton from 'primevue/skeleton';
+{%- endif %}
+import Dialog from 'primevue/dialog';
+import Button from 'primevue/button';
+{%- for f in fields | filter(attribute='field.kind', value='Text') | unique(attribute='field.kind') %}
+import InputText from 'primevue/inputtext';
+{%- endfor %}
+{%- for f in fields | filter(attribute='field.kind', value='Number') | unique(attribute='field.kind') %}
+import InputNumber from 'primevue/inputnumber';
+{%- endfor %}
+{%- for f in fields | filter(attribute='field.kind', value='Toggle') | unique(attribute='field.kind') %}
+import ToggleButton from 'primevue/togglebutton';
+{%- endfor %}
+import { useToast } from 'primevue/usetoast';
+import type { ModalContext } from '../../store/modalStore';
+{%- if calls.submit is defined %}
+import { useAuthStore } from '../../store/authStore';
+import { {{calls.submit.request.request.camel_name}}Request } from '../../requests/{{calls.submit.request.request.camel_name}}Request';
+{%- endif %}
+{%- for prop in props | filter(attribute='structure') | unique(attribute='structure.pascal_name') %}
+import { Structure{{prop.structure.pascal_name}} } from '../../structures/Structure{{prop.structure.pascal_name}}';
+{%- endfor %}
+{%- for f in fields | filter(attribute='field.kind', value='Select') | unique(attribute='control.pascal_name') %}
+import Select{{f.control.pascal_name}} from '../controls/Select{{f.control.pascal_name}}.vue';
+{%- endfor %}
+{%- for f in fields | filter(attribute='field.kind', value='Search') | unique(attribute='control.pascal_name') %}
+import Search{{f.control.pascal_name}} from '../controls/Search{{f.control.pascal_name}}.vue';
+{%- endfor %}
+{%- for f in fields | filter(attribute='field.kind', value='UploadS3') | unique(attribute='field.kind') %}
+import UploadS3{{f.control.pascal_name}} from '../controls/UploadS3{{f.control.pascal_name}}.vue';
+{%- endfor %}
+{%- for f in fields | filter(attribute='field.kind', value='EditorJS') | unique(attribute='field.kind') %}
+import EditorJS{{f.control.pascal_name}} from '../controls/EditorJS{{f.control.pascal_name}}.vue';
+{%- endfor %}
+
+export type Dialog{{dialog.pascal_name}}Props = {
+  {%- if props | length > 0 %}
+  {%- for prop in props %}
+  {%- if prop is containing('ts_type') %}
+  {{prop.name}}: {{prop.ts_type}}{% if prop.is_array %}[]{% endif%}
+  {%- elif prop is containing('structure') %}
+  {{prop.name}}: Structure{{prop.structure.pascal_name}}{% if prop.is_array %}[]{% endif%}
+  {%- endif %}
+  {%- endfor %}
+  {%- else %}
+  // TODO: Implement
+  {%- endif %}
+}
+
+export type Dialog{{dialog.pascal_name}}Handlers = {
+  success?: (data: any) => void
+  failure?: (error: any) => void
+}
+
+const props = defineProps<Dialog{{dialog.pascal_name}}Props>()
+
+const emit = defineEmits<{
+  (e: 'success', data: any): void
+  (e: 'failure', error: any): void
+}>()
+
+onMounted(() => {
+  console.trace(props)
+})
+
+{%- if calls.submit is defined %}
+{# Blank line #}
+const authStore = useAuthStore()
+{%- endif %}
+
+const toast = useToast();
+
+const context = inject<ModalContext>('modalContext')!
+
+{%- if fields | length > 0 %}
+{# Blank line #}
+const form = reactive<{
+  {%- for f in fields %}
+  {{f.field.camel_name}}?: {{f.field.ts_type}}
+  {%- endfor %}
+}>({
+  {%- for f in fields %}
+  {%- if f.field is containing('expression') %}
+  {{f.field.camel_name}}: {{f.field.expression}},
+  {%- elif f.field is containing('value') %}
+  {{f.field.camel_name}}: {{f.field.value}},
+  {%- endif %}
+  {%- endfor %}
+})
+{%- endif %}
+
+const maximized = ref(false)
+
+async function doSubmit() {
+  {%- if calls.submit is defined %}
+
+  const token = await authStore.requireToken()
+
+  {%- if calls.submit.request.request.props | length > 0 %}
+  {# Blank line #}
+  const data = await {{calls.submit.request.request.camel_name}}Request({
+    {%- for name, value in calls.submit.bindings %}
+    {%- if name != value %}
+    {{name}}: {{value}},
+    {%- else %}
+    {{name}},
+    {%- endif %}
+    {%- endfor %}
+  })
+  {%- else %}
+  {# Blank line #}
+  const data = {{calls.submit.request.request.camel_name}}Request(),
+  {%- endif %}
+
+  return data
+  {%- else %}
+  // TODO: Implement
+  {%- endif %}
+}
+
+async function handleSubmit() {
+  try {
+    const data = await doSubmit()
+    context.doClose()
+    toast.add({
+      severity: 'success',
+      summary: 'Success',
+      detail: 'Submitted',
+      life: 3000
+    })
+    emit('success', data)
+  } catch (e) {
+    toast.add({
+      severity: 'error',
+      summary: 'Error',
+      detail: e,
+      life: 3000
+    })
+    emit('failure', e)
+  }
+}
+
+async function handleClose() {
+  context.doClose()
+}
+
+</script>
+<template>
+  <Dialog
+    :visible="true"
+    @update:visible="handleClose"
+    modal
+    maximizable
+    header="{{dialog.title_name}}"
+    class="w-full"
+    :class="{
+      'sm:max-w-[35rem]': !maximized
+    }"
+    @maximize="maximized = true"
+    @unmaximize="maximized = false"
+  >
+    <form @submit.prevent="handleSubmit">
+      <div class="mb-2 grid grid-cols-1 gap-3">
+        {%- for f in fields %}
+        {%- if f.field.kind == 'Text' %}
+        <div>
+          <label class="block text-sm mb-1">{{f.field.title_name}}:</label>
+          <InputText v-model="form.{{f.field.camel_name}}" class="w-full" />
+        </div>
+        {%- elif f.field.kind == 'Number' %}
+        <div>
+          <label class="block text-sm mb-1">{{f.field.title_name}}:</label>
+          <InputNumber v-model="form.{{f.field.camel_name}}" class="w-full" />
+        </div>
+        {%- elif f.field.kind == 'Toggle' %}
+        <div>
+          <label class="block text-sm mb-1">{{f.field.title_name}}:</label>
+          <ToggleButton v-model="form.{{f.field.camel_name}}" class="min-w-[8rem]" />
+        </div>
+        {%- elif f.field.kind == 'Select' %}
+        <div>
+          <label class="block text-sm mb-1">{{f.field.title_name}}:</label>
+          <Select{{f.control.pascal_name}} v-model="form.{{f.field.camel_name}}" class="w-full" />
+        </div>
+        {%- elif f.field.kind == 'UploadS3' %}
+        <div>
+          <label class="block text-sm mb-1">{{f.field.title_name}}:</label>
+          <UploadS3{{f.control.pascal_name}} v-model="form.{{f.field.camel_name}}" class="w-full" />
+        </div>
+        {%- elif f.field.kind == 'EditorJS' %}
+        <div>
+          <label class="block text-sm mb-1">{{f.field.title_name}}:</label>
+          <EditorJS{{f.control.pascal_name}} v-model="form.{{f.field.camel_name}}" class="w-full" />
+        </div>
+        {%- endif %}
+        {%- else %}
+        <Skeleton class="mb-2"></Skeleton>
+        <Skeleton width="10rem" class="mb-2"></Skeleton>
+        <Skeleton width="5rem" class="mb-2"></Skeleton>
+        <Skeleton height="2rem" class="mb-2"></Skeleton>
+        <Skeleton width="10rem" height="4rem"></Skeleton>
+        {%- endfor %}
+      </div>
+      <div class="flex justify-end gap-2">
+        <Button type="submit" label="Send"></Button>
+        <Button type="button" label="Close" severity="secondary" @click="handleClose"></Button>
+      </div>
+    </form>
+  </Dialog>
+</template>

@@ -1,0 +1,7 @@
+import axios from 'axios'
+
+export const {{remote.camel_name}}Remote = axios.create({
+  baseURL: window.__APP_CONFIG__?.remote?.{{remote.camel_name}}?.baseURL
+    || import.meta.env.VITE_REMOTE_{{remote.snake_name | upper}}_BASE_URL
+    || '{{remote.base_url}}'
+})

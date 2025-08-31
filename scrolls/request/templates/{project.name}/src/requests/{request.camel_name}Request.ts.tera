@@ -1,0 +1,66 @@
+import { {{remote.camel_name}}Remote } from '../remotes/{{remote.camel_name}}Remote'
+{%- if request is containing('structure') %}
+import { Structure{{request.structure.pascal_name}} } from '../structures/Structure{{request.structure.pascal_name}}'
+{%- endif %}
+{%- for prop in request.props | filter(attribute='structure') | unique(attribute='structure.pascal_name') %}
+import { Structure{{prop.structure.pascal_name}} } from '../structures/Structure{{prop.structure.pascal_name}}';
+{%- endfor %}
+
+{%- if request.props | length > 0 %}
+{# Blank line #}
+export type Request{{request.pascal_name}}Props = {
+  {%- for prop in request.props %}
+  {%- if prop is containing('ts_type') %}
+  {{prop.name}}{% if prop.is_optional %}?{% endif %}: {{prop.ts_type}}{% if prop.is_array %}[]{% endif %}
+  {%- elif prop is containing('structure') %}
+  {{prop.name}}{% if prop.is_optional %}?{% endif %}: Structure{{prop.structure.pascal_name}}{% if prop.is_array %}[]{% endif %}
+  {%- endif %}
+  {%- endfor %}
+}
+{%- endif %}
+
+{%- if request is containing('structure') %}
+export type Request{{request.pascal_name}}Response = Structure{{request.structure.pascal_name}}
+{%- else %}
+export type Request{{request.pascal_name}}Response = any
+{%- endif %}
+
+export const {{request.camel_name}}Request = async ({% if request.props | length > 0 %}props: Request{{request.pascal_name}}Props{% endif %}): Promise<Request{{request.pascal_name}}Response> => {
+
+  const { data } = await {{remote.camel_name}}Remote.request<Request{{request.pascal_name}}Response>({
+    method: `{{request.method | default(value='GET')}}`,
+    url: `{{request.path}}`,
+    {%- if request is containing('body') %}
+    {%- if request.props | filter(attribute='name', value='payload') | length > 0 %}
+    data: Object.assign({{request.body | json_encode}}, props.payload),
+    {%- else %}
+    data: {{request.body | json_encode}},
+    {%- endif %}
+    {%- else %}
+    {%- if request.props | filter(attribute='name', value='payload') | length > 0 %}
+    data: {{props.payload}},
+    {%- endif %}
+    {%- endif %}
+    {%- if request is containing('query') %}
+    {%- if request.props | filter(attribute='name', value='query') | length > 0 %}
+    params: Object.assign({{request.query | json_encode}}, props.query),
+    {%- else %}
+    params: {{request.query | json_encode}},
+    {%- endif %}
+    {%- else %}
+    {%- if request.props | filter(attribute='name', value='query') | length > 0 %}
+    params: {{props.query}},
+    {%- endif %}
+    {%- endif %}
+    paramsSerializer: {
+      indexes: null
+    },
+    {%- if request.props | filter(attribute='name', value='token') | length > 0 %}
+    headers: {
+      Authorization: `Bearer ${props.token}`
+    },
+    {%- endif %}
+  })
+
+  return data
+}

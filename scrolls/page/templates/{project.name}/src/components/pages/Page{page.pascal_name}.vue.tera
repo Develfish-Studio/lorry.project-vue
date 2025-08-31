@@ -1,0 +1,148 @@
+<script setup lang="ts">
+import { onMounted } from 'vue';
+{%- if queries | length > 0 %}
+import { ref, watch, reactive } from 'vue';
+import { useAuthStore } from '../../store/authStore';
+{%- endif %}
+import { useSecurityContext } from '../../hooks/useSecurityContext';
+{%- for query in queries %}
+import {
+  type Query{{query.query.query.pascal_name}}Filter,
+  type Query{{query.query.query.pascal_name}}Sorter,
+  useQuery{{query.query.query.pascal_name}}
+} from '../../queries/useQuery{{query.query.query.pascal_name}}';
+{%- endfor %}
+import SectionHeading from '../partials/SectionHeading.vue';
+{%- for child in children %}
+{%- if child.type == 'section' %}
+{%- if child.section.kind == 'grid' %}
+import Grid{{child.section.pascal_name}} from '../grids/Grid{{child.section.pascal_name}}.vue';
+{%- elif child.section.kind == 'fieldset' %}
+import Fieldset{{child.section.pascal_name}} from '../fieldsets/Fieldset{{child.section.pascal_name}}.vue';
+{%- elif child.section.kind == 'toolbar' %}
+import Toolbar{{child.section.pascal_name}} from '../toolbars/Toolbar{{child.section.pascal_name}}.vue';
+{%- elif child.section.kind == 'widget' %}
+import Widget{{child.section.pascal_name}} from '../widgets/Widget{{child.section.pascal_name}}.vue';
+{%- endif %}
+{%- endif %}
+{%- endfor %}
+
+const props = defineProps<{
+  {%- if props | length > 0 %}
+  {%- for prop in props %}
+  {{prop.name}}: {{prop.ts_type}}
+  {%- endfor %}
+  {%- else %}
+  // yet nothing
+  {%- endif %}
+}>()
+
+onMounted(() => {
+  console.trace(props)
+})
+
+{%- if queries | length > 0 %}
+{# Blank line #}
+// @ts-ignore
+const authStore = useAuthStore()
+{%- endif %}
+
+// @ts-ignore
+const security = useSecurityContext()
+{%- for query in queries %}
+{# Blank line #}
+const {{query.query.query.camel_name}}Filter = reactive<Query{{query.query.query.pascal_name}}Filter>({
+  {%- for f in query.query.filters %}
+  {%- if query.bindings is containing(f.filter.camel_name) %}
+  {{f.filter.camel_name}}: {{query.bindings[f.filter.camel_name]}},
+  {%- else %}
+  {{f.filter.camel_name}}: {{f.filter.initial_value | default(value='undefined')}},
+  {%- endif %}
+  {%- endfor %}
+})
+
+const {{query.query.query.camel_name}}Sort = reactive<Query{{query.query.query.pascal_name}}Sorter>({
+  {%- for s in query.query.sorters %}
+  {{s.sorter.camel_name}}: {{f.sorter.initial_value | default(value='undefined')}},
+  {%- endfor %}
+})
+
+const {{query.query.query.camel_name}}Selection = ref([])
+
+const {{query.query.query.camel_name}}Query = useQuery{{query.query.query.pascal_name}}(
+  props,
+  {{query.query.query.camel_name}}Sort,
+  {{query.query.query.camel_name}}Filter
+)
+
+const handleRefresh{{query.query.query.pascal_name}} = () => {
+  {{query.query.query.camel_name}}Query.refresh()
+  {{query.query.query.camel_name}}Selection.value = []
+}
+
+watch(
+  [{{query.query.query.camel_name}}Filter, {{query.query.query.camel_name}}Sort],
+  handleRefresh{{query.query.query.pascal_name}}
+)
+{%- endfor %}
+
+</script>
+
+<template>
+  <div class="flex flex-col flex-1 {% if layout.flex %}overflow-hidden{% else %}overflow-auto{% endif %}">
+    {%- for child in children %}
+    {%- if child.type == 'section' %}
+    {%- if child.section.kind == 'grid' %}
+    <Grid{{child.section.pascal_name}}
+      {%- if child.requires_auth %}
+      v-if='security.hasAnyRole.value({{ child.roles | json_encode() }})'
+      {%- endif %}
+      :state="{{child.component.query.camel_name}}Query.state"
+      v-model:selection="{{child.component.query.camel_name}}Selection"
+      {%- for v in child.variables %}
+      :{{v.name}}="{{v.value}}"
+      {%- endfor %}
+      @refresh="handleRefresh{{child.component.query.pascal_name}}"
+    />
+    {%- elif child.section.kind == 'fieldset' %}
+    <Fieldset{{child.section.pascal_name}}
+      {%- if child.requires_auth %}
+      v-if='security.hasAnyRole.value({{ child.roles | json_encode() }})'
+      {%- endif %}
+      :state="{{child.component.query.camel_name}}Query.state"
+    />
+    {%- elif child.section.kind == 'widget' %}
+    <Widget{{child.section.pascal_name}}
+      {%- if child.requires_auth %}
+      v-if='security.hasAnyRole.value({{ child.roles | json_encode() }})'
+      {%- endif %}
+      class="rounded-none border-0 border-b"
+    />
+    {%- elif child.section.kind == 'toolbar' %}
+    <Toolbar{{child.section.pascal_name}}
+      {%- if child.requires_auth %}
+      v-if='security.hasAnyRole.value({{ child.roles | json_encode() }})'
+      {%- endif %}
+      class="rounded-none border-0 border-b"
+      v-model:selection="{{child.component.query.camel_name}}Selection"
+      {%- for f in child.component.filters %}
+      v-model:filter-by-{{f.filter.kebab_name}} = {{child.component.query.camel_name}}Filter.{{f.filter.camel_name}}
+      {%- endfor %}
+      {%- for s in child.component.sorters %}
+      v-model:sort-by-{{s.sorter.kebab_name}} = {{child.component.query.camel_name}}Sort.{{s.sorter.camel_name}}
+      {%- endfor %}
+      @refresh="handleRefresh{{child.component.query.pascal_name}}"
+    />
+    {%- endif %}
+    {%- elif child.type == 'heading' %}
+    <SectionHeading
+      {%- if child.requires_auth %}
+      v-if='security.hasAnyRole.value({{ child.roles | json_encode() }})'
+      {%- endif %}
+      tag="{{child.heading.tag}}"
+      title="{{child.heading.title_name}}"
+    />
+    {%- endif %}
+    {%- endfor %}
+  </div>
+</template>

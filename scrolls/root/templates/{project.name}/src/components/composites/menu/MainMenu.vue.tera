@@ -1,0 +1,17 @@
+<script setup lang="ts">
+{%- for menu in menus %}
+import Section{{menu.pascal_name}} from './Section{{menu.pascal_name}}.vue'
+{%- endfor %}
+</script>
+
+<template>
+  <div class="flex flex-col h-full w-[25rem] shadow">
+    <div class="overflow-y-auto">
+      <ul class="list-none px-4 m-0 mt-4">
+        {%- for menu in menus %}
+        <li class="empty:hidden"><Section{{menu.pascal_name}} /></li>
+        {%- endfor %}
+      </ul>
+    </div>
+  </div>
+</template>

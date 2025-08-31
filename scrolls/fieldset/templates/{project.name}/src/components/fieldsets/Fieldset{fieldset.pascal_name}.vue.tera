@@ -1,0 +1,41 @@
+<script setup lang="ts">
+import Panel from 'primevue/panel';
+import { type State } from '../../hooks/useAxiosRequest';
+{%- for field in fields | filter(attribute='field.kind', value='symbol') | unique(attribute='symbol.pascal_name') %}
+import Symbol{{field.symbol.pascal_name}} from '../symbols/Symbol{{field.symbol.pascal_name}}.vue'
+{%- endfor %}
+
+defineProps<{
+  state: State<any>
+}>()
+</script>
+
+<template>
+  <Panel
+    header="{{fieldset.title_name}}"
+    pt:header:class="flex items-center justify-between text-surface-700 dark:text-surface-0/80 bg-surface-50 dark:bg-surface-900 border-b border-surface-200 dark:border-surface-700 rounded-tr-lg p-5"
+    pt:content:class="p-5 border-b border-surface-200 dark:border-surface-700 bg-surface-0 dark:bg-surface-900 text-surface-700 dark:text-surface-0/80"
+  >
+    <table class="table-auto border-separate border-spacing-x-3" v-if="state.isLoaded && state.data != null">
+    {%- for field in fields %}
+    <tr>
+      <th class="text-left">{{field.field.title_name}}:</th>
+      <td>
+        {%- if field.field.kind == 'template' %}
+        <div v-html="{{column.column.template}}"></div>
+        {%- elif field.field.kind == 'symbol' %}
+        {%- if field.field.path is defined %}
+        <Symbol{{field.symbol.pascal_name}} :value="state.data.{{field.field.path}}" />
+        {%- else %}
+        <Symbol{{field.symbol.pascal_name}} :value="state.data" />
+        {%- endif %}
+        {%- elif field.field.kind == 'path' %}
+        <div v-if="state.data.{{field.field.path}}" v-html="state.data.{{field.field.path}}"></div>
+        <div v-else><i class="text-slate-500">Empty</i></div>
+        {%- endif %}
+      </td>
+    </tr>
+    {%- endfor %}
+    </table>
+  </Panel>
+</template>

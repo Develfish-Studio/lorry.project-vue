@@ -1,0 +1,142 @@
+import { EventEmitter } from 'events';
+import { reactive } from "vue";
+{%- if dialog %}
+import { shallowRef } from 'vue';
+import { useModalStore } from '../store/modalStore';
+{%- endif %}
+{%- if request or fetchers | length > 0 %}
+import { useAuthStore } from "../store/authStore";
+{%- endif %}
+{%- if request %}
+import { {{request.request.request.camel_name}}Request } from '../requests/{{request.request.request.camel_name}}Request';
+{%- endif %}
+{%- for fetcher in fetchers %}
+import { {{fetcher.request.request.camel_name}}Request } from '../requests/{{fetcher.request.request.camel_name}}Request';
+{%- endfor %}
+{%- for prop in props | filter(attribute='structure') | unique(attribute='structure.pascal_name') %}
+import { Structure{{prop.structure.pascal_name}} } from '../structures/Structure{{prop.structure.pascal_name}}';
+{%- endfor %}
+{%- if dialog %}
+import Dialog{{dialog.dialog.dialog.pascal_name}} from '../components/dialogs/Dialog{{dialog.dialog.dialog.pascal_name}}.vue';
+{%- endif %}
+
+{%- if props | length > 0 %}
+{# Blank line #}
+export type Action{{action.pascal_name}}Props = {
+  {%- for prop in props %}
+  {%- if prop is containing('ts_type') %}
+  {{prop.name}}: {{prop.ts_type}}{% if prop.is_array %}[]{% endif %}
+  {%- elif prop is containing('structure') %}
+  {{prop.name}}: Structure{{prop.structure.pascal_name}}{% if prop.is_array %}[]{% endif %}
+  {%- endif %}
+  {%- endfor %}
+}
+{%- endif %}
+
+export function useAction{{action.pascal_name}}() {
+  {%- if dialog %}
+  const modalStore = useModalStore()
+  {%- endif %}
+  {%- if request or fetchers | length > 0 %}
+  const authStore = useAuthStore()
+  {%- endif %}
+
+  const emitter = new EventEmitter()
+
+  const state = reactive({
+    isLoading: false,
+    isLoaded: false,
+    isFailed: false,
+  })
+
+  const execute = async ({% if props | length > 0 %}props: Action{{action.pascal_name}}Props{% endif %}) => {
+    try {
+      Object.assign(state, {
+        isLoading: true,
+        isFailed: false
+      })
+
+      {%- if request or fetchers | length > 0 %}
+      {# Blank line #}
+      const token = await authStore.requireToken()
+      {%- endif %}
+
+      {%- if fetchers | length > 0 %}
+      {# Blank line #}
+      const context = {
+        {%- for fetcher in fetchers %}
+        {%- if fetcher.request.request.props | length > 0 %}
+        {{fetcher.name}}: await {{fetcher.request.request.camel_name}}Request({
+          {%- for name, value in fetcher.bindings %}
+          {%- if name != value %}
+          {{name}}: {{value}},
+          {%- else %}
+          {{name}},
+          {%- endif %}
+          {%- endfor %}
+        }),
+        {%- else %}
+        {{fetcher.name}}: {{fetcher.request.request.camel_name}}Request(),
+        {%- endif %}
+        {%- endfor %}
+      }
+      {%- endif %}
+
+      {%- if dialog %}
+      {# Blank line #}
+      modalStore.openModal(() => ({
+        component: shallowRef(Dialog{{dialog.dialog.dialog.pascal_name}}),
+        {%- if dialog.bindings | length > 0 %}
+        props: {
+          {%- for name, value in dialog.bindings %}
+          {%- if name != value %}
+          {{name}}: {{value}},
+          {%- else %}
+          {{name}},
+          {%- endif %}
+          {%- endfor %}
+        },
+        {%- endif %}
+        handlers: {
+          success: (data: any) => emitter.emit('success', data),
+          failure: (error: any) => emitter.emit('failure', error)
+        },
+      }))
+      {%- endif %}
+
+      {%- if request %}
+      {# Blank line #}
+      {%- if request.bindings | length > 0 %}
+      const { data } = await {{request.request.request.camel_name}}Request({
+        {%- for name, value in request.bindings %}
+        {%- if name != value %}
+        {{name}}: {{value}},
+        {%- else %}
+        {{name}},
+        {%- endif %}
+        {%- endfor %}
+      })
+      {%- else %}
+      const { data } = await {{request.request.request.camel_name}}Request()
+      {%- endif %}
+
+      emitter.emit('success', data)
+      {%- endif %}
+
+      Object.assign(state, {
+        isLoading: false,
+        isFailed: false,
+        isLoaded: true,
+      })
+    } catch (e) {
+      Object.assign(state, {
+        isLoading: false,
+        isFailed: true
+      })
+      emitter.emit('failure', e)
+      throw e
+    }
+  }
+
+  return { execute, state, emitter }
+}

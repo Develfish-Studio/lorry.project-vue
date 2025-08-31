@@ -1,0 +1,11 @@
+import { type Router } from "vue-router";
+import { type Menu } from "../menus.d";
+
+export const menu{{menu.pascal_name}} = (router: Router): Menu => ({
+  title: '{{menu.title_name}}',
+  items: [
+    {%- for item in menu.items %}
+    { type: 'page', label: '{{item.item.title_name}}', description: 'View {{menu.title_name}} → {{item.item.title_name}} page', execute: () => router.push('{{item.to}}') },
+    {%- endfor %}
+  ]
+})

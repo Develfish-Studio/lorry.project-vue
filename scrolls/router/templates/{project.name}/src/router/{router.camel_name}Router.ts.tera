@@ -1,0 +1,30 @@
+import View{{view.pascal_name}} from '../components/views/View{{view.pascal_name}}.vue'
+{%- for route in router.routes | filter(attribute='page') %}
+import Page{{route.page.pascal_name}} from '../components/pages/Page{{route.page.pascal_name}}.vue'
+{%- endfor %}
+
+export const {{router.camel_name}}Router = {
+  path: '/{{router.snake_name}}',
+  component: View{{view.pascal_name}},
+  children: [
+    {%- for route in router.routes %}
+    {
+      path: '{{route.route.path}}',
+      component: Page{{route.page.pascal_name}},
+      props: true,
+      {%- if route.route.requires_auth %}
+      meta: {
+        requiresAuth: true,
+        roles: {{route.route.roles | default(value=[]) | json_encode()}}
+      }
+      {%- endif %}
+    },
+    {%- endfor %}
+    {%- if router.routes | length > 0 %}
+    {
+      path: '',
+      redirect: '/{{router.snake_name}}/{{router.routes[0].route.snake_name}}'
+    }
+    {%- endif %}
+  ]
+}

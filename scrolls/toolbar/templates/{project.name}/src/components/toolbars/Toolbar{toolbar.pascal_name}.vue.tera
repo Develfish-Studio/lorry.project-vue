@@ -1,0 +1,247 @@
+<script setup lang="ts" generic="T">
+import { ref, reactive{% if filters | length > 0 %}, shallowRef{% endif %} } from 'vue';
+import Menubar from 'primevue/menubar'
+import Button from 'primevue/button'
+import Chip from 'primevue/chip'
+import Menu from 'primevue/menu';
+{%- if filters | length > 0 %}
+import { type Option } from '../dialogs/PlatformDialogFilter.vue';
+import { useModalStore } from '../../store/modalStore';
+{%- endif %}
+{%- if request is containing('structure') %}
+import { Structure{{request.structure.pascal_name}} } from '../../structures/Structure{{request.structure.pascal_name}}'
+{%- endif %}
+{%- for f in filters %}
+{%- if f.filter.kind == 'select' %}
+import SelectPicker{{f.control.pascal_name}} from '../controls/SelectPicker{{f.control.pascal_name}}.vue'
+{%- elif f.filter.kind == 'search' %}
+import SearchPicker{{f.control.pascal_name}} from '../controls/SearchPicker{{f.control.pascal_name}}.vue'
+{%- endif %}
+{%- endfor %}
+{%- for h in handles %}
+import { useAction{{h.action.action.pascal_name}} } from '../../actions/useAction{{h.action.action.pascal_name}}'
+{%- endfor %}
+
+{%- if request is containing('structure') %}
+{# Blank line #}
+export type Selection{{toolbar.pascal_name}}Record = Structure{{request.structure.pascal_name}}['content'][0]
+{%- else %}
+{# Blank line #}
+export type Selection{{toolbar.pascal_name}}Record = Record<string, any>
+{%- endif %}
+
+{%- if filters | length > 0 %}
+{# Blank line #}
+const modalStore = useModalStore()
+{%- endif %}
+
+const emit = defineEmits<{
+  (e: 'refresh'): void
+}>()
+{# Blank line #}
+{%- for f in filters %}
+{%- if f.filter.kind == 'select' or f.filter.kind == 'search' %}
+const filterBy{{f.filter.pascal_name}} = defineModel('filterBy{{f.filter.pascal_name}}')
+{%- endif %}
+{%- endfor %}
+{%- for s in sorters %}
+const sortBy{{s.sorter.pascal_name}} = defineModel<'asc' | 'desc' | undefined>('sortBy{{s.sorter.pascal_name}}')
+{%- endfor %}
+
+{%- if handles | filter(attribute='handle.require_selection') | length > 0 %}
+const selection = defineModel<Selection{{toolbar.pascal_name}}Record[]>('selection', { required: true })
+{%- endif %}
+
+{%- if filters | length > 0 %}
+{# Blank line #}
+const filters = reactive<Record<string, Option | undefined>>({
+{%- for f in filters %}
+{%- if f.filter.kind == 'select' %}
+  {{f.filter.camel_name}}: undefined,
+{%- elif f.filter.kind == 'search' %}
+  {{f.filter.camel_name}}: undefined,
+{%- endif %}
+{%- endfor %}
+})
+{%- endif %}
+{%- if sorters | length > 0 %}
+{# Blank line #}
+const sortings = reactive<Record<string, 'asc' | 'desc' | undefined>>({
+{%- for s in sorters %}
+  {{s.sorter.camel_name}}: undefined,
+{%- endfor %}
+})
+{%- endif %}
+
+{%- if filters | length > 0 %}
+{# Blank line #}
+const filtersMenuRef = ref()
+
+const filtersMenuItems = ref([
+  {
+    label: 'By Property',
+    items: [
+      {%- for f in filters %}
+      {%- if f.filter.kind == 'select' or f.filter.kind == 'search' %}
+      {
+        label: '{{f.filter.title_name}}',
+        icon: 'pi pi-plus-circle',
+        command: () => [
+          modalStore.openModal(() => ({
+            component: shallowRef({% if f.filter.kind == 'select' %}SelectPicker{% elif f.filter.kind == 'search' %}SearchPicker{% endif %}{{f.control.pascal_name}}),
+            props: {},
+            handlers: {
+              ['update:model-value'](value: string) {
+                filterBy{{f.filter.pascal_name}}.value = value
+              },
+              ['change:option'](option: Option) {
+                filters.{{f.filter.camel_name}} = option
+              }
+            }
+          }))
+        ]
+      },
+      {%- endif %}
+      {%- endfor %}
+    ]
+  }
+])
+{%- endif %}
+
+{%- if sorters | length > 0 %}
+{# Blank line #}
+const sortersMenuRef = ref()
+
+const sortersMenuItems = ref([
+  {
+    label: 'By Column',
+    items: [
+      {%- for s in sorters %}
+      {
+        label: '{{s.sorter.title_name}} (Ascending)',
+        icon: 'pi pi-sort-alpha-down',
+        command: () => {
+          sortings.{{s.sorter.camel_name}} = 'asc'
+          sortBy{{s.sorter.pascal_name}}.value = 'asc'
+        }
+      },
+      {
+        icon: 'pi pi-sort-alpha-up',
+        label: '{{s.sorter.title_name}} (Descending)',
+        command: () => {
+          sortings.{{s.sorter.camel_name}} = 'desc'
+          sortBy{{s.sorter.pascal_name}}.value = 'desc'
+        }
+      },
+      {%- endfor %}
+    ]
+  }
+])
+{%- endif %}
+{%- if handles | length > 0 %}
+{# Blank line #}
+{%- for h in handles %}
+const action{{h.action.action.pascal_name}} = useAction{{h.action.action.pascal_name}}()
+{%- endfor %}
+{%- for h in handles %}
+{# Blank line #}
+action{{h.action.action.pascal_name}}.emitter
+  .on('success', (data: any) => {
+    console.log(data)
+    {%- for r in h.on_success %}
+    emit('{{r.event}}'{% if r.data is defined %}, {{r.data | json_encode}}{% endif %})
+    {%- endfor %}
+  })
+  .on('failure', (error: any) => {
+    console.error(error)
+    {%- for r in h.on_failure %}
+    emit('{{r.event}}'{% if r.data is defined %}, {{r.data | json_encode}}{% endif %})
+    {%- endfor %}
+  })
+{%- endfor %}
+{%- for h in handles %}
+{# Blank line #}
+async function handle{{h.handle.pascal_name}}() {
+  {%- if h.action.props | length > 0 %}
+  action{{h.action.action.pascal_name}}.execute({
+    {%- for name, value in h.handle.bindings %}
+    {%- if name != value %}
+    {{name}}: {{value}},
+    {%- else %}
+    {{name}},
+    {%- endif %}
+    {%- endfor %}
+  })
+  {%- else %}
+  action{{h.action.action.pascal_name}}.execute()
+  {%- endif %}
+}
+{%- endfor %}
+{%- endif %}
+</script>
+
+<template>
+  <Menubar>
+    <template #start>
+      <div class="flex flex-wrap">
+        {%- if filters | length > 0 %}
+        <div class="flex items-center group-filters">
+          <div class="flex flex-none">
+            <Button text label="Filters" icon="pi pi-filter" @click="filtersMenuRef.toggle($event)" />
+            <Menu ref="filtersMenuRef" id="overlay_menu" :model="filtersMenuItems" :popup="true" />
+          </div>
+          <div class="flex flex-wrap flex-1">
+          {%- for f in filters %}
+            <Chip v-if="filterBy{{f.filter.pascal_name}} !== undefined" removable @remove="filterBy{{f.filter.pascal_name}} = undefined" class="p-1 ms-2 my-1 md:whitespace-nowrap">
+              <span><b>{{f.filter.title_name}}: </b><span v-text="filters.{{f.filter.camel_name}}?.title || filterBy{{f.filter.pascal_name}}"></span></span>
+            </Chip>
+          {%- endfor %}
+          </div>
+        </div>
+        {%- endif %}
+        {%- if sorters | length > 0 %}
+        <div class="flex items-center group-sort">
+          <div class="flex flex-none">
+            <Button text label="Sort" icon="pi pi-sort" @click="sortersMenuRef.toggle($event)" />
+            <Menu ref="sortersMenuRef" id="overlay_menu" :model="sortersMenuItems" :popup="true" />
+          </div>
+          <div class="flex flex-wrap flex-1">
+          {%- for s in sorters %}
+            <Chip v-if="sortBy{{s.sorter.pascal_name}} !== undefined" removable @remove="sortBy{{s.sorter.pascal_name}} = undefined" class="p-1 ms-2 my-1 md:whitespace-nowrap">
+              <span><b>{{s.sorter.title_name}}: </b><span v-text="sortings.{{s.sorter.camel_name}} || sortBy{{s.sorter.pascal_name}}"></span></span>
+            </Chip>
+          {%- endfor %}
+          </div>
+        </div>
+        {%- endif %}
+        <div class="flex items-center group-sort">
+          <div class="flex flex-none">
+            <Button text label="Refresh" icon="pi pi-refresh" @click="emit('refresh')" />
+          </div>
+        </div>
+      </div>
+    </template>
+    <template #end>
+      <div class="flex flex-wrap">
+        {%- if handles | length > 0 %}
+        <div class="flex items-center group-actions">
+          {%- for h in handles %}
+          <Button
+            {%- if h.handle.require_selection %}
+            v-if="selection.length > 0"
+            {%- endif %}
+            text
+            label="{{h.handle.title_name}}"
+            class="ms-2"
+            {%- if h.handle is containing('severity') %}
+            severity="{{h.handle.severity}}"
+            {%- endif %}
+            @click="handle{{h.handle.pascal_name}}"
+          />
+          {%- endfor %}
+        </div>
+        {%- endif %}
+      </div>
+    </template>
+  </Menubar>
+</template>
