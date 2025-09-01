@@ -1,83 +1,105 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
-local Action = require('vue/Action')
+--!strict
 
-local Handle = {
-  __type = 'Handle',
-  name = nil,
-  severity = nil,
-  require_selection = false,
-  on_success = nil,
-  on_failure = nil,
-  bindings = nil,
+local Meta = require('@lorry.utils/lib/Meta')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+local Action = require('../Action/Action')
+
+local Handle = {}
+
+export type Handle = typeof(Handle) & Wrapper.Unwrappable<Unwrapped>
+
+export type Message = {
+  event: string,
+  data: any
 }
 
-function Handle:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type HandleProps = {
+  action: Action.Action,
+  name: string?,
+  severity: string?,
+  require_selection: boolean?,
+  on_success: {Message},
+  on_failure: {Message},
+  bindings: {[string]: string},
+}
+
+export type UnwrappedHandle = Wrapper.UnwrappedName & {
+  severity: string?,
+  require_selection: boolean?,
+  bindings: {[string]: string},
+}
+
+export type Unwrapped = {
+  handle: UnwrappedHandle,
+  action: Action.UnwrappedAction,
+  on_success: {Message},
+  on_failure: {Message},
+}
+
+export type HandleImpl = Handle & HandleProps
+
+function Handle:new(o: HandleProps): Handle
+  return Meta:type(o, self, "Toolbar.Handle")
 end
 
-function Handle:from(action: Action, name: string, bindings: table)
-  assert(name ~= nil)
+function Handle:from(action: Action.Action, name: string?): Handle
+  assert(action ~= nil)
   return Handle:new({
     action = action,
     name = name,
-    severity = severity,
-    bindings = bindings or Meta:table {},
+    bindings = Meta:table {},
     on_success = Meta:array {},
     on_failure = Meta:array {},
   })
 end
 
-function Handle:with_selection(require_selection: boolean)
-  self.require_selection = require_selection
-  return self
+function Handle:with_selection(require_selection: boolean): Handle
+  local this = self::HandleImpl
+  this.require_selection = require_selection
+  return this
 end
 
-function Handle:with_severity(severity: string)
-  self.severity = severity
-  return self
+function Handle:with_severity(severity: string): Handle
+  local this = self::HandleImpl
+  this.severity = severity
+  return this
 end
 
-function Handle:with_on_success(event: string, data)
-  self.on_success[#self.on_success + 1] = {
+function Handle:with_on_success(event: string, data): Handle
+  local this = self::HandleImpl
+  this.on_success[#this.on_success + 1] = {
     event = event,
     data = data
   }
-  return self
+  return this
 end
 
-function Handle:with_on_failure(event: string, data)
-  self.on_failure[#self.on_failure + 1] = {
+function Handle:with_on_failure(event: string, data): Handle
+  local this = self::HandleImpl
+  this.on_failure[#this.on_failure + 1] = {
     event = event,
     data = data
   }
-  return self
+  return this
 end
 
-function Handle:unwrap_handle()
-  local name = self.name or self.action.name
-  return {
-    require_selection = self.require_selection,
-    severity = self.severity,
-    bindings = self.bindings,
-    name = name,
-    snake_name = name,
-    camel_name = case.snakeToCamel(name),
-    pascal_name = case.snakeToPascal(name),
-    kebab_name = case.snakeToKebab(name),
-    title_name = case.snakeToTitle(name),
+function Handle:unwrap_handle(): UnwrappedHandle
+  local this = self::HandleImpl
+  local name = this.name or (assert(this.action)::Action.ActionImpl).name
+  return Meta:append(Wrapper:unwrap_name(name)) {
+    require_selection = this.require_selection,
+    severity = this.severity,
+    bindings = this.bindings,
   }
 end
 
-function Handle:unwrap()
+function Handle:unwrap(): Unwrapped
+  local this = self::HandleImpl
   return {
-    handle = self:unwrap_handle(),
-    action = self.action:unwrap(),
-    on_failure = self.on_failure,
-    on_success = self.on_success,
+    handle = this:unwrap_handle(),
+    action = this.action:unwrap_action(),
+    on_failure = this.on_failure,
+    on_success = this.on_success,
   }
 end
 

@@ -13,17 +13,17 @@ import { {{request.request.request.camel_name}}Request } from '../requests/{{req
 {%- for fetcher in fetchers %}
 import { {{fetcher.request.request.camel_name}}Request } from '../requests/{{fetcher.request.request.camel_name}}Request';
 {%- endfor %}
-{%- for prop in props | filter(attribute='structure') | unique(attribute='structure.pascal_name') %}
+{%- for prop in action.props | filter(attribute='structure') | unique(attribute='structure.pascal_name') %}
 import { Structure{{prop.structure.pascal_name}} } from '../structures/Structure{{prop.structure.pascal_name}}';
 {%- endfor %}
 {%- if dialog %}
 import Dialog{{dialog.dialog.dialog.pascal_name}} from '../components/dialogs/Dialog{{dialog.dialog.dialog.pascal_name}}.vue';
 {%- endif %}
 
-{%- if props | length > 0 %}
+{%- if action.props | length > 0 %}
 {# Blank line #}
 export type Action{{action.pascal_name}}Props = {
-  {%- for prop in props %}
+  {%- for prop in action.props %}
   {%- if prop is containing('ts_type') %}
   {{prop.name}}: {{prop.ts_type}}{% if prop.is_array %}[]{% endif %}
   {%- elif prop is containing('structure') %}
@@ -49,7 +49,7 @@ export function useAction{{action.pascal_name}}() {
     isFailed: false,
   })
 
-  const execute = async ({% if props | length > 0 %}props: Action{{action.pascal_name}}Props{% endif %}) => {
+  const execute = async ({% if action.props | length > 0 %}props: Action{{action.pascal_name}}Props{% endif %}) => {
     try {
       Object.assign(state, {
         isLoading: true,

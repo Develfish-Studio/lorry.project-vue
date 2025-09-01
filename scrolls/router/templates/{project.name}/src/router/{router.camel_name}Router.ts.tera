@@ -1,5 +1,5 @@
 import View{{view.pascal_name}} from '../components/views/View{{view.pascal_name}}.vue'
-{%- for route in router.routes | filter(attribute='page') %}
+{%- for route in routes | filter(attribute='page') %}
 import Page{{route.page.pascal_name}} from '../components/pages/Page{{route.page.pascal_name}}.vue'
 {%- endfor %}
 
@@ -7,7 +7,7 @@ export const {{router.camel_name}}Router = {
   path: '/{{router.snake_name}}',
   component: View{{view.pascal_name}},
   children: [
-    {%- for route in router.routes %}
+    {%- for route in routes %}
     {
       path: '{{route.route.path}}',
       component: Page{{route.page.pascal_name}},
@@ -20,10 +20,10 @@ export const {{router.camel_name}}Router = {
       {%- endif %}
     },
     {%- endfor %}
-    {%- if router.routes | length > 0 %}
+    {%- if routes | length > 0 %}
     {
       path: '',
-      redirect: '/{{router.snake_name}}/{{router.routes[0].route.snake_name}}'
+      redirect: '/{{router.snake_name}}/{{routes[0].route.snake_name}}'
     }
     {%- endif %}
   ]

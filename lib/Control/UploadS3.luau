@@ -34,7 +34,11 @@ export type Unwrapped = {
   upload: UnwrappedUpload,
 }
 
-export type UploadS3Impl = UploadS3 & UploadS3Props
+export type UploadS3Impl =
+  & UploadS3
+  & UploadS3Props
+  & Project.IHaveProject
+  & Project.IHaveName
 
 function UploadS3:new(o: UploadS3Props): UploadS3
   return Meta:type(o, self, "Control.UploadS3")
@@ -101,6 +105,18 @@ function UploadS3:unwrap(): Unwrapped
     request = request:unwrap_request(),
     upload = this:unwrap_upload(),
   }
+end
+
+function UploadS3:get_project(): Project.Project
+  local this = self::UploadS3Impl
+  local request = this.request::Request.RequestImpl
+  local remote = request.remote::Remote.RemoteImpl
+  return remote.project
+end
+
+function UploadS3:get_name(): string
+  local this = self::UploadS3Impl
+  return this.name
 end
 
 return UploadS3

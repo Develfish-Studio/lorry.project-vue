@@ -33,6 +33,7 @@ export type UnwrappedSection = Wrapper.UnwrappedName & {
 }
 
 export type Unwrapped = {
+  type: string,
   section: UnwrappedSection,
   roles: {string},
   component: any,
@@ -122,14 +123,14 @@ function Section:unwrap_section(): UnwrappedSection
   }
 end
 
-function Section:unwrap()
+function Section:unwrap(): Unwrapped
+  local this = self::SectionImpl
   return {
-    type = 'section',
-    requires_auth = self.requires_auth,
-    roles = self.roles,
-    section = self:unwrap_section(),
-    component = self.component:unwrap(),
-    variables = self.variables,
+    type = Meta:typeof(this),
+    roles = this.roles,
+    section = this:unwrap_section(),
+    component = this.component and this.component:unwrap(),
+    variables = this.variables,
   }
 end
 

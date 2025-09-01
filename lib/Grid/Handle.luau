@@ -1,79 +1,99 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
-local Action = require('vue/Action')
+--!strict
 
-local Handle = {
-  __type = 'Handle',
-  name = nil,
-  icon = nil,
-  expression = nil,
-  on_success = nil,
-  on_failure = nil,
+local Meta = require('@lorry.utils/lib/Meta')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+local Action = require('../Action/Action')
+
+local Handle = {}
+
+export type Handle = typeof(Handle) & Wrapper.Unwrappable<Unwrapped>
+
+export type Message = {
+  event: string,
+  data: any
 }
 
-function Handle:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type HandleProps = {
+  action: Action.Action,
+  name: string,
+  icon: string?,
+  expression: string?,
+  on_success: {Message},
+  on_failure: {Message},
+}
+
+export type UnwrappedHandle = Wrapper.UnwrappedName & {
+  icon: string?,
+  expression: string?,
+}
+
+export type Unwrapped = {
+  handle: UnwrappedHandle,
+  action: Action.UnwrappedAction
+}
+
+export type HandleImpl = Handle & HandleProps
+
+function Handle:new(o: HandleProps): Handle
+  return Meta:type(o, self, "Grid.Handle")
 end
 
-function Handle:from(action: Action, name: string)
+function Handle:from(action: Action.Action, name: string): Handle
   assert(name ~= nil)
   return Handle:new({
     action = action,
     name = name,
     on_success = Meta:array {},
-    on_failure = Meta:array {},
+    on_failure = Meta:array {}
   })
 end
 
-function Handle:with_icon(icon: string)
-  self.icon = icon
-  return self
+function Handle:with_icon(icon: string): Handle
+  local this = self::HandleImpl
+  this.icon = icon
+  return this
 end
 
-function Handle:with_expression(expression: string)
-  self.expression = expression
-  return self
+function Handle:with_expression(expression: string): Handle
+  local this = self::HandleImpl
+  this.expression = expression
+  return this
 end
 
 function Handle:with_on_success(event: string, data)
-  self.on_success[#self.on_success + 1] = {
+  local this = self::HandleImpl
+  this.on_success[#this.on_success + 1] = {
     event = event,
     data = data
   }
-  return self
+  return this
 end
 
 function Handle:with_on_failure(event: string, data)
-  self.on_failure[#self.on_failure + 1] = {
+  local this = self::HandleImpl
+  this.on_failure[#this.on_failure + 1] = {
     event = event,
     data = data
   }
-  return self
+  return this
 end
 
-function Handle:unwrap_handle()
-  local name = self.name or self.action.name
-  return {
-    expression = self.expression,
-    icon = self.icon,
-    name = name,
-    snake_name = name,
-    camel_name = case.snakeToCamel(name),
-    pascal_name = case.snakeToPascal(name),
-    kebab_name = case.snakeToKebab(name),
-    title_name = case.snakeToTitle(name),
+function Handle:unwrap_handle(): UnwrappedHandle
+  local this = self::HandleImpl
+  local name = this.name or (assert(this.action)::Action.ActionImpl).name
+  return Meta:append(Wrapper:unwrap_name(name)) {
+    expression = this.expression,
+    icon = this.icon,
   }
 end
 
-function Handle:unwrap()
+function Handle:unwrap(): Unwrapped
+  local this = self::HandleImpl
   return {
-    handle = self:unwrap_handle(),
-    action = self.action:unwrap_action(),
-    on_failure = self.on_failure,
-    on_success = self.on_success,
+    handle = this:unwrap_handle(),
+    action = this.action:unwrap_action(),
+    on_failure = this.on_failure,
+    on_success = this.on_success,
   }
 end
 

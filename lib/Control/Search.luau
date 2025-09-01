@@ -37,7 +37,11 @@ export type Unwrapped = {
   request: Request.UnwrappedRequest,
 }
 
-export type SearchImpl = Search & SearchProps
+export type SearchImpl =
+  & Search
+  & SearchProps
+  & Project.IHaveProject
+  & Project.IHaveName
 
 function Search:new(o: SearchProps): Search
   return Meta:type(o, self, "Control.Search")
@@ -101,6 +105,18 @@ function Search:unwrap(): Unwrapped
     request = request:unwrap_request(),
     search = this:unwrap_search(),
   }
+end
+
+function Search:get_project(): Project.Project
+  local this = self::SearchImpl
+  local request = this.request::Request.RequestImpl
+  local remote = request.remote::Remote.RemoteImpl
+  return remote.project
+end
+
+function Search:get_name(): string
+  local this = self::SearchImpl
+  return this.name
 end
 
 return Search

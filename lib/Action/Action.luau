@@ -1,36 +1,57 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
-local Project = require('vue/Project')
-local Prop = require('vue/action/Prop')
-local Fetch = require('vue/action/Fetch')
-local Dialog = require('vue/action/Dialog')
-local Request = require('vue/action/Request')
+--!strict
+
+local Meta = require('@lorry.utils/lib/Meta')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+local Project = require('@lorry.project/lib/Project')
+
+local Prop = require('./Prop')
+local Fetch = require('./Fetch')
+local Dialog = require('./Dialog')
+local Request = require('./Request')
 
 local Action = {
-  __type = 'Action',
-
   Prop = Prop,
   Fetch = Fetch,
   Dialog = Dialog,
   Request = Request,
-
-  project = nil,
-  request = nil,
-  dialog = nil,
-  name = nil,
-  props = nil,
-  fetchers = nil,
 }
 
-function Action:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type Action = typeof(Action) & Wrapper.Unwrappable<Unwrapped>
+
+export type ActionProps = {
+  project: Project.Project,
+  request: Request.Request?,
+  dialog: Dialog.Dialog?,
+  name: string,
+  props: {Prop.Prop},
+  fetchers: {Fetch.Fetch},
+}
+
+export type UnwrappedAction = Wrapper.UnwrappedName & {
+  props: {Prop.Unwrapped},
+}
+
+export type Unwrapped = {
+  action: UnwrappedAction,
+  request: Request.Unwrapped?,
+  dialog: Dialog.Unwrapped?,
+}
+
+export type ActionImpl = Action & ActionProps
+
+export type AnyChild =
+  | Prop.Prop
+  | Fetch.Fetch
+  | Request.Request
+  | Dialog.Dialog
+
+function Action:new(o: ActionProps): Action
+  return Meta:type(o, self, "Action")
 end
 
-function Action:from(project: Project, name: string)
+function Action:from(project: Project.Project, name: string): Action
   assert(project ~= nil)
+  assert(name ~= nil)
   return Action:new({
     project = project,
     name = name,
@@ -39,74 +60,44 @@ function Action:from(project: Project, name: string)
   })
 end
 
-function Action:with_rules(children: table)
-  children = children or {}
-
+function Action:setup(children: {any}): Action
+  local this = self::ActionImpl
   for _, child in children do
-    if child.__type == 'Prop' then
-      self.props[#self.props + 1] = child
-    elseif child.__type == 'Fetch' then
-      self.fetchers[#self.fetchers + 1] = child
-    elseif child.__type == 'Request' then
-      self.request = child
-    elseif child.__type == 'Dialog' then
-      self.dialog = child
-    end
+    this:with_child(child)
   end
-
-  return self
+  return this
 end
 
-function Action:unwrap_action()
-  local name = self.name
-  return {
-    name = name,
-    snake_name = name,
-    camel_name = case.snakeToCamel(name),
-    pascal_name = case.snakeToPascal(name),
-    kebab_name = case.snakeToKebab(name),
-    title_name = case.snakeToTitle(name),
+function Action:with_child(child: any): Action
+  local this = self::ActionImpl
+  local tag = Meta:typeof(child)
+  if tag == 'Action.Prop' then
+    this.props[#this.props + 1] = child
+  elseif tag == 'Action.Fetch' then
+    this.fetchers[#this.fetchers + 1] = child
+  elseif tag == 'Action.Request' then
+    this.request = child
+  elseif tag == 'Action.Dialog' then
+    this.dialog = child
+  end
+  return this
+end
+
+function Action:unwrap_action(): UnwrappedAction
+  local this = self::ActionImpl
+  return Meta:append(Wrapper:unwrap_name(this.name)) {
+    props = Wrapper:unwrap_array(this.props),
   }
 end
 
-function Action:unwrap_request()
-  if self.request == nil then
-    return nil
-  end
-  return self.request:unwrap()
-end
-
-function Action:unwrap_dialog()
-  if self.dialog == nil then
-    return nil
-  end
-  return self.dialog:unwrap()
-end
-
-function Action:unwrap_fetchers()
-  local fetchers = Meta:array {}
-  for _, child in self.fetchers do
-    fetchers[#fetchers + 1] = child:unwrap()
-  end
-  return fetchers
-end
-
-function Action:unwrap_props()
-  local props = Meta:array {}
-  for _, child in self.props do
-    props[#props + 1] = child:unwrap()
-  end
-  return props
-end
-
-function Action:unwrap()
+function Action:unwrap(): Unwrapped
+  local this = self::ActionImpl
   return {
-    project = self.project:unwrap_project(),
-    request = self:unwrap_request(),
-    dialog = self:unwrap_dialog(),
-    fetchers = self:unwrap_fetchers(),
-    props = self:unwrap_props(),
-    action = self:unwrap_action()
+    project = this.project:unwrap_project(),
+    request = this.request and this.request:unwrap(),
+    dialog = this.dialog and this.dialog:unwrap(),
+    fetchers = Wrapper:unwrap_array(this.fetchers),
+    action = this:unwrap_action()
   }
 end
 

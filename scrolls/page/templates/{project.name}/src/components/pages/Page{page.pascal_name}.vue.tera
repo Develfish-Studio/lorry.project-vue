@@ -14,7 +14,7 @@ import {
 {%- endfor %}
 import SectionHeading from '../partials/SectionHeading.vue';
 {%- for child in children %}
-{%- if child.type == 'section' %}
+{%- if child.type == 'Page.Section' %}
 {%- if child.section.kind == 'grid' %}
 import Grid{{child.section.pascal_name}} from '../grids/Grid{{child.section.pascal_name}}.vue';
 {%- elif child.section.kind == 'fieldset' %}
@@ -91,7 +91,7 @@ watch(
 <template>
   <div class="flex flex-col flex-1 {% if layout.flex %}overflow-hidden{% else %}overflow-auto{% endif %}">
     {%- for child in children %}
-    {%- if child.type == 'section' %}
+    {%- if child.type == 'Page.Section' %}
     {%- if child.section.kind == 'grid' %}
     <Grid{{child.section.pascal_name}}
       {%- if child.requires_auth %}
@@ -134,12 +134,12 @@ watch(
       @refresh="handleRefresh{{child.component.query.pascal_name}}"
     />
     {%- endif %}
-    {%- elif child.type == 'heading' %}
+    {%- elif child.type == 'Page.Heading' %}
     <SectionHeading
       {%- if child.requires_auth %}
       v-if='security.hasAnyRole.value({{ child.roles | json_encode() }})'
       {%- endif %}
-      tag="{{child.heading.tag}}"
+      tag="{{child.heading.tag | default(value = 'h1')}}"
       title="{{child.heading.title_name}}"
     />
     {%- endif %}

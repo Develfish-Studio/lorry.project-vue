@@ -1,30 +1,43 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
-local Remote = require('vue/Remote')
-local Column = require('vue/grid/Column')
-local Handle = require('vue/grid/Handle')
+--!strict
+
+local Meta = require('@lorry.utils/lib/Meta')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+local Query = require('../Query/Query')
+local Column = require('./Column')
+local Handle = require('./Handle')
 
 local Grid = {
-  __type = 'Grid',
-
   Column = Column,
   Handle = Handle,
-
-  query = nil,
-  name = nil,
-  columns = nil,
-  handles = nil,
 }
 
-function Grid:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type Grid = typeof(Grid)
+
+export type GridProps = {
+  query: Query.Query,
+  name: string,
+  columns: {Column.Column},
+  handles: {Handle.Handle},
+}
+
+export type UnwrappedGrid = Wrapper.UnwrappedName
+
+export type Unwrapped = {
+  grid: UnwrappedGrid,
+}
+
+export type GridImpl = Grid & GridProps
+
+export type AnyChild =
+  | Column.Column
+  | Handle.Handle
+
+function Grid:new(o: GridProps): Grid
+  return Meta:type(o, self, "Grid")
 end
 
-function Grid:from_query(query: Request, name: string, rules: table)
-  assert(query ~= nil, 'Invalid argument for named object: ' .. (name or 'nil'))
+function Grid:from_query(query: Query.Query, name: string): Grid
+  assert(query ~= nil)
   return Grid
     :new({
       query = query,
@@ -32,52 +45,35 @@ function Grid:from_query(query: Request, name: string, rules: table)
       columns = Meta:array {},
       handles = Meta:array {},
     })
-    :with_rules(rules)
 end
 
-function Grid:with_rules(children: table)
-  children = children or {}
-
+function Grid:setup(children: {AnyChild}): Grid
+  local this = self::GridImpl
   for _, child in children do
-    if child.__type == 'Column' then
-      self.columns[#self.columns + 1] = child
-    elseif child.__type == 'Handle' then
-      self.handles[#self.handles + 1] = child
-    end
+    this:with_child(child)
   end
-
-  return self
+  return this
 end
 
-function Grid:unwrap_columns()
-  local columns = Meta:array {}
-  for _, column in self.columns do
-    columns[#columns + 1] = column:unwrap()
+function Grid:with_child(child: AnyChild): Grid
+  local this = self::GridImpl
+  local tag = Meta:typeof(child)
+  if tag == 'Grid.Column' then
+    this.columns[#this.columns + 1] = child::Column.Column
+  elseif tag == 'Grid.Handle' then
+    this.handles[#this.handles + 1] = child::Handle.Handle
   end
-  return columns
+  return this
 end
 
-function Grid:unwrap_handles()
-  local handles = Meta:array {}
-  for _, handle in self.handles do
-    handles[#handles + 1] = handle:unwrap()
-  end
-  return handles
+function Grid:unwrap_grid(): UnwrappedGrid
+  local this = self::GridImpl
+  local name = this.name or (this.query::Query.QueryImpl).name
+  return Wrapper:unwrap_name(name)
 end
 
-function Grid:unwrap_grid()
-  local name = self.name or self.request.remote.name
-  return {
-    name = name,
-    snake_name = name,
-    camel_name = case.snakeToCamel(name),
-    pascal_name = case.snakeToPascal(name),
-    kebab_name = case.snakeToKebab(name),
-    title_name = case.snakeToTitle(name),
-  }
-end
-
-function Grid:unwrap()
+function Grid:unwrap(): Unwrapped
+  local this = self::GridImpl
   local query = self.query
   local request = query.request
   local remote = request.remote
@@ -87,9 +83,9 @@ function Grid:unwrap()
     remote = remote:unwrap_remote(),
     request = request:unwrap_request(),
     query = query:unwrap_query(),
-    grid = self:unwrap_grid(),
-    columns = self:unwrap_columns(),
-    handles = self:unwrap_handles(),
+    grid = this:unwrap_grid(),
+    columns = Wrapper:unwrap_array(this.columns),
+    handles = Wrapper:unwrap_array(this.handles),
   }
 end
 

@@ -1,24 +1,53 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
+--!strict
 
-local Column = {
-  __type = 'Column',
-  kind = nil,
-  name = nil,
-  path = nil,
-  symbol = nil,
-  template = nil,
-  variables = nil,
+local Meta = require('@lorry.utils/lib/Meta')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+local Symbol = require('../Control/Symbol')
+
+local Column = {}
+
+export type Column = typeof(Column) & Wrapper.Unwrappable<Unwrapped>
+
+export type ColumnKind =
+  | 'path'
+  | 'template'
+  | 'symbol'
+
+export type Variable = {
+  name: string,
+  value: string,
 }
 
-function Column:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type ColumnProps = {
+  kind: ColumnKind,
+  name: string,
+  path: string?,
+  symbol: Symbol.Symbol?,
+  template: string?,
+  variables: {Variable},
+}
+
+export type UnwrappedColumn = Wrapper.UnwrappedName & {
+  kind: ColumnKind,
+  path: string?,
+  template: string?,
+}
+
+export type Unwrapped = {
+  column: UnwrappedColumn,
+  symbol: Symbol.UnwrappedSymbol?,
+  variables: {Variable}
+}
+
+export type ColumnImpl = Column & ColumnProps
+
+function Column:new(o: ColumnProps): Column
+  return Meta:type(o, self, "Grid.Column")
 end
 
-function Column:from_path(name: string, path: string)
+function Column:from_path(name: string, path: string): Column
+  assert(name ~= nil)
+  assert(path ~= nil)
   return Column:new({
     kind = 'path',
     name = name,
@@ -27,7 +56,9 @@ function Column:from_path(name: string, path: string)
   })
 end
 
-function Column:from_template(name: string, template: string)
+function Column:from_template(name: string, template: string): Column
+  assert(name ~= nil)
+  assert(template ~= nil)
   return Column:new({
     kind = 'template',
     name = name,
@@ -36,7 +67,9 @@ function Column:from_template(name: string, template: string)
   })
 end
 
-function Column:from_symbol(name: string, symbol: Symbol, path: string)
+function Column:from_symbol(name: string, symbol: Symbol.Symbol, path: string?): Column
+  assert(name ~= nil)
+  assert(symbol ~= nil)
   return Column:new({
     kind = 'symbol',
     name = name,
@@ -46,41 +79,30 @@ function Column:from_symbol(name: string, symbol: Symbol, path: string)
   })
 end
 
-function Column:with_variable(name: string, value: string)
-  self.variables[#self.variables + 1] = {
+function Column:with_variable(name: string, value: string): Column
+  local this = self::ColumnImpl
+  this.variables[#this.variables + 1] = {
     name = name,
     value = value,
   }
-  return self
+  return this
 end
 
-function Column:unwrap_symbol()
-  if self.symbol == nil then
-    return nil
-  end
-  return self.symbol:unwrap_symbol()
-end
-
-function Column:unwrap_column()
-  local name = self.name
-  return {
-    kind = self.kind,
-    path = self.path,
-    template = self.template,
-    name = name,
-    snake_name = name,
-    camel_name = case.snakeToCamel(name),
-    pascal_name = case.snakeToPascal(name),
-    kebab_name = case.snakeToKebab(name),
-    title_name = case.snakeToTitle(name),
+function Column:unwrap_column(): UnwrappedColumn
+  local this = self::ColumnImpl
+  return Meta:append(Wrapper:unwrap_name(this.name)) {
+    kind = this.kind,
+    path = this.path,
+    template = this.template,
   }
 end
 
-function Column:unwrap()
+function Column:unwrap(): Unwrapped
+  local this = self::ColumnImpl
   return {
-    column = self:unwrap_column(),
-    symbol = self:unwrap_symbol(),
-    variables = self.variables,
+    column = this:unwrap_column(),
+    symbol = this.symbol and this.symbol:unwrap_symbol(),
+    variables = this.variables,
   }
 end
 

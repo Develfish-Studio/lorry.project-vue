@@ -1,20 +1,32 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
+--!strict
 
-local Column = {
-  __type = 'Column',
-  name = nil,
-  ts_type = nil,
+local Meta = require('@lorry.utils/lib/Meta')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+
+local Column = {}
+
+export type Column = typeof(Column) & Wrapper.Unwrappable<Unwrapped>
+
+export type ColumnProps = {
+  name: string,
+  ts_type: string?,
 }
 
-function Column:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type UnwrappedColumn = Wrapper.UnwrappedName & {
+  ts_type: string,
+}
+
+export type Unwrapped = {
+  column: UnwrappedColumn
+}
+
+export type ColumnImpl = Column & ColumnProps
+
+function Column:new(o: ColumnProps): Column
+  return Meta:type(o, self, "Toolbar.Column")
 end
 
-function Column:from(name: string, ts_type: string)
+function Column:from(name: string, ts_type: string?): Column
   assert(name ~= nil)
   return Column:new({
     name = name,
@@ -22,22 +34,17 @@ function Column:from(name: string, ts_type: string)
   })
 end
 
-function Column:unwrap_column()
-  local name = self.name or self.action.name
-  return {
+function Column:unwrap_column(): UnwrappedColumn
+  local this = self::ColumnImpl
+  return Meta:append(Wrapper:unwrap_name(this.name)) {
     ts_type = self.ts_type,
-    name = name,
-    snake_name = name,
-    camel_name = case.snakeToCamel(name),
-    pascal_name = case.snakeToPascal(name),
-    kebab_name = case.snakeToKebab(name),
-    title_name = case.snakeToTitle(name),
   }
 end
 
-function Column:unwrap()
+function Column:unwrap(): Unwrapped
+  local this = self::ColumnImpl
   return {
-    column = self:unwrap_column()
+    column = this:unwrap_column()
   }
 end
 

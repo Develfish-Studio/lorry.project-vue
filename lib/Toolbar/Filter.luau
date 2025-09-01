@@ -1,70 +1,88 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
-local Select = require('vue/control/Select')
-local Search = require('vue/control/Search')
+--!strict
 
-local Filter = {
-  __type = 'Filter',
-  kind = nil,
-  project = nil,
-  control = nil,
-  name = nil,
+local Meta = require('@lorry.utils/lib/Meta')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+local Project = require('@lorry.project/lib/Project')
+
+local Select = require('../Control/Select')
+local Search = require('../Control/Search')
+
+local Filter = {}
+
+export type Filter = typeof(Filter) & Wrapper.Unwrappable<Unwrapped>
+
+export type FilterKind =
+  | 'select'
+  | 'search'
+
+export type Control = Select.Select | Search.Search
+
+export type FilterProps = {
+  kind: FilterKind,
+  control: Control,
+  name: string?,
 }
 
-function Filter:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type UnwrappedFilter = Wrapper.UnwrappedName & {
+  kind: FilterKind
+}
+
+export type Unwrapped = {
+  project: Project.UnwrappedProject,
+  filter: UnwrappedFilter,
+  control: Search.UnwrappedSearch | Select.UnwrappedSelect
+}
+
+export type FilterImpl = Filter & FilterProps
+
+function Filter:new(o: FilterProps): Filter
+  return Meta:type(o, self, "Toolbar.Filter")
 end
 
-function Filter:from_select(control: Select, name: string)
-  assert(control ~= nil, 'Invalid argument for named object: ' .. (name or 'nil'))
+function Filter:from_select(control: Select.Select, name: string?): Filter
+  assert(control ~= nil)
   return Filter:new({
     kind = 'select',
-    project = control.project,
     control = control,
     name = name,
   })
 end
 
-function Filter:from_search(control: Search, name: string)
-  assert(control ~= nil, 'Invalid argument for named object: ' .. (name or 'nil'))
+function Filter:from_search(control: Search.Search, name: string?): Filter
+  assert(control ~= nil)
   return Filter:new({
     kind = 'search',
-    project = control.project,
     control = control,
     name = name,
   })
 end
 
-function Filter:unwrap_filter()
-  local name = self.name or self.control.name
-  return {
-    kind = self.kind,
-    name = name,
-    snake_name = name,
-    camel_name = case.snakeToCamel(name),
-    pascal_name = case.snakeToPascal(name),
-    kebab_name = case.snakeToKebab(name),
-    title_name = case.snakeToTitle(name),
+function Filter:unwrap_filter(): UnwrappedFilter
+  local this = self::FilterImpl
+  return Meta:append(Wrapper:unwrap_name(this.name or (this.control::Project.IHaveName):get_name())) {
+    kind = this.kind,
   }
 end
 
-function Filter:unwrap_control()
-  if self.kind == 'select' then
-    return self.control:unwrap_select()
-  elseif self.kind == 'search' then
-    return self.control:unwrap_search()
+function Filter:unwrap_control(): Select.UnwrappedSelect | Search.UnwrappedSearch
+  local this = self::FilterImpl
+  if this.kind == 'select' then
+    return (this.control::Select.Select):unwrap_select()
+  elseif this.kind == 'search' then
+    return (this.control::Search.Search):unwrap_search()
+  else
+    error("Unsupported control:" .. this.kind)
   end
-  return nil
 end
 
-function Filter:unwrap()
+function Filter:unwrap(): Unwrapped
+  local this = self::FilterImpl
+  local control = this.control::Project.IHaveProject
+  local project = control.get_project(this.control)
   return {
-    project = self.project:unwrap_project(),
-    filter = self:unwrap_filter(),
-    control = self:unwrap_control(),
+    project = project:unwrap_project(),
+    filter = this:unwrap_filter(),
+    control = this:unwrap_control(),
   }
 end
 

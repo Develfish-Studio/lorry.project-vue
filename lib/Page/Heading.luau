@@ -11,15 +11,16 @@ export type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
 
 export type HeadingProps = {
   name: string,
-  tag: HeadingTag,
+  tag: HeadingTag?,
   roles: {string},
 }
 
 export type UnwrappedHeading = Wrapper.UnwrappedName & {
-  tag: HeadingTag,
+  tag: HeadingTag?,
 }
 
 export type Unwrapped = {
+  type: string,
   heading: UnwrappedHeading,
   roles: {string}
 }
@@ -30,7 +31,7 @@ function Heading:new(o: HeadingProps): Heading
   return Meta:type(o, self, "Page.Heading")
 end
 
-function Heading:from(name: string, tag: HeadingTag): Heading
+function Heading:from(name: string, tag: HeadingTag?): Heading
   return Heading:new({
     name = name,
     tag = tag,
@@ -54,6 +55,7 @@ end
 function Heading:unwrap(): Unwrapped
   local this = self::HeadingImpl
   return {
+    type = Meta:typeof(this),
     heading = this:unwrap_heading(),
     roles = this.roles,
   }

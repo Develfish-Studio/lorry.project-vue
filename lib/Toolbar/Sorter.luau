@@ -1,16 +1,26 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
+--!strict
 
-local Sorter = {
-  __type = 'Sorter',
-  name = nil,
+local Meta = require('@lorry.utils/lib/Meta')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+
+local Sorter = {}
+
+export type Sorter = typeof(Sorter) & Wrapper.Unwrappable<Unwrapped>
+
+export type SorterProps = {
+  name: string,
 }
 
-function Sorter:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type UnwrappedSorter = Wrapper.UnwrappedName
+
+export type Unwrapped = {
+  sorter: UnwrappedSorter
+}
+
+export type SorterImpl = Sorter & SorterProps
+
+function Sorter:new(o: SorterProps): Sorter
+  return Meta:type(o, self, "Toolbar.Sorter")
 end
 
 function Sorter:from(name: string)
@@ -20,21 +30,15 @@ function Sorter:from(name: string)
   })
 end
 
-function Sorter:unwrap_sorter()
-  local name = self.name
-  return {
-    name = name,
-    snake_name = name,
-    camel_name = case.snakeToCamel(name),
-    pascal_name = case.snakeToPascal(name),
-    kebab_name = case.snakeToKebab(name),
-    title_name = case.snakeToTitle(name),
-  }
+function Sorter:unwrap_sorter(): UnwrappedSorter
+  local this = self::SorterImpl
+  return Wrapper:unwrap_name(this.name)
 end
 
-function Sorter:unwrap()
+function Sorter:unwrap(): Unwrapped
+  local this = self::SorterImpl
   return {
-    sorter = self:unwrap_sorter(),
+    sorter = this:unwrap_sorter(),
   }
 end
 

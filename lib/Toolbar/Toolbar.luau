@@ -1,36 +1,63 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
-local Project = require('vue/Project')
-local Filter = require('vue/toolbar/Filter')
-local Sorter = require('vue/toolbar/Sorter')
-local Handle = require('vue/toolbar/Handle')
-local Column = require('vue/toolbar/Column')
+--!strict
+
+local Meta = require('@lorry.utils/lib/Meta')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+local Project = require('@lorry.project/lib/Project')
+local Query = require('../Query/Query')
+local Request = require('../Transport/Request/Request')
+local Remote = require('../Transport/Remote')
+local Filter = require('./Filter')
+local Sorter = require('./Sorter')
+local Handle = require('./Handle')
+local Column = require('./Column')
 
 local Toolbar = {
-  __type = 'Toolbar',
-
   Filter = Filter,
   Sorter = Sorter,
   Handle = Handle,
   Column = Column,
-
-  query = nil,
-  name = nil,
-  columns = nil,
-  filters = nil,
-  sorters = nil,
-  handles = nil,
 }
 
-function Toolbar:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type Toolbar = typeof(Toolbar)
+
+export type ToolbarProps = {
+  query: Query.Query,
+  name: string,
+  columns: {Column.Column},
+  filters: {Filter.Filter},
+  sorters: {Sorter.Sorter},
+  handles: {Handle.Handle},
+}
+
+export type UnwrappedToolbar = Wrapper.UnwrappedName
+
+export type Unwrapped = {
+  project: Project.UnwrappedProject,
+  remote: Remote.UnwrappedRemote,
+  request: Request.UnwrappedRequest,
+  query: Query.UnwrappedQuery,
+  toolbar: UnwrappedToolbar,
+  filters: {Filter.Unwrapped},
+  sorters: {Sorter.Unwrapped},
+  handles: {Handle.Unwrapped},
+  columns: {Column.Unwrapped},
+}
+
+export type ToolbarImpl = Toolbar & ToolbarProps
+
+export type AnyChild =
+  | Filter.Filter
+  | Sorter.Sorter
+  | Handle.Handle
+  | Column.Column
+
+function Toolbar:new(o): Toolbar
+  return Meta:type(o, self, "Toolbar")
 end
 
-function Toolbar:from_query(query: Query, name: string, rules: table)
-  assert(query ~= nil, 'Invalid argument for named object: ' .. (name or 'nil'))
+function Toolbar:from_query(query: Query.Query, name: string): Toolbar
+  assert(query ~= nil)
+  assert(name ~= nil)
   return Toolbar
     :new({
       query = query,
@@ -40,87 +67,52 @@ function Toolbar:from_query(query: Query, name: string, rules: table)
       handles = Meta:array {},
       columns = Meta:array {},
     })
-    :with_rules(rules)
 end
 
-function Toolbar:with_rules(children: table)
-  children = children or {}
-
+function Toolbar:setup(children: {AnyChild}): Toolbar
+  local this = self::ToolbarImpl
   for _, child in children do
-    if child.__type == 'Filter' then
-      self.filters[#self.filters + 1] = child
-    elseif child.__type == 'Sorter' then
-      self.sorters[#self.sorters + 1] = child
-    elseif child.__type == 'Handle' then
-      self.handles[#self.handles + 1] = child
-    elseif child.__type == 'Column' then
-      self.columns[#self.columns + 1] = child
-    end
+    this:with_child(child)
   end
-
-  return self
+  return this
 end
 
-function Toolbar:unwrap_filters()
-  local filters = Meta:array {}
-  for _, filter in self.filters do
-    filters[#filters + 1] = filter:unwrap()
+function Toolbar:with_child(child: AnyChild): Toolbar
+  local this = self::ToolbarImpl
+  local tag = Meta:typeof(child)
+  if tag == 'Toolbar.Filter' then
+    this.filters[#this.filters + 1] = child::Filter.Filter
+  elseif tag == 'Toolbar.Sorter' then
+    this.sorters[#this.sorters + 1] = child::Sorter.Sorter
+  elseif tag == 'Toolbar.Handle' then
+    this.handles[#this.handles + 1] = child::Handle.Handle
+  elseif tag == 'Toolbar.Column' then
+    this.columns[#this.columns + 1] = child::Column.Column
   end
-  return filters
+  return this
 end
 
-function Toolbar:unwrap_sorters()
-  local sorters = Meta:array {}
-  for _, sorter in self.sorters do
-    sorters[#sorters + 1] = sorter:unwrap()
-  end
-  return sorters
+function Toolbar:unwrap_toolbar(): UnwrappedToolbar
+  local this = self::ToolbarImpl
+  return Wrapper:unwrap_name(this.name)
 end
 
-function Toolbar:unwrap_handles()
-  local handles = Meta:array {}
-  for _, handle in self.handles do
-    handles[#handles + 1] = handle:unwrap()
-  end
-  return handles
-end
-
-function Toolbar:unwrap_columns()
-  local columns = Meta:array {}
-  for _, column in self.columns do
-    columns[#columns + 1] = column:unwrap()
-  end
-  return columns
-end
-
-function Toolbar:unwrap_toolbar()
-  local name = self.name
-  return {
-    name = name,
-    name = name,
-    snake_name = name,
-    camel_name = case.snakeToCamel(name),
-    pascal_name = case.snakeToPascal(name),
-    kebab_name = case.snakeToKebab(name),
-    title_name = case.snakeToTitle(name),
-  }
-end
-
-function Toolbar:unwrap()
-  local query = self.query
-  local request = query.request
-  local remote = request.remote
+function Toolbar:unwrap(): Unwrapped
+  local this = self::ToolbarImpl
+  local query = this.query::Query.QueryImpl
+  local request = query.request::Request.RequestImpl
+  local remote = request.remote::Remote.RemoteImpl
   local project = remote.project
   return {
     project = project:unwrap_project(),
     remote = remote:unwrap_remote(),
     request = request:unwrap_request(),
     query = query:unwrap_query(),
-    toolbar = self:unwrap_toolbar(),
-    filters = self:unwrap_filters(),
-    sorters = self:unwrap_sorters(),
-    handles = self:unwrap_handles(),
-    columns = self:unwrap_columns(),
+    toolbar = this:unwrap_toolbar(),
+    filters = Wrapper:unwrap_array(this.filters),
+    sorters = Wrapper:unwrap_array(this.sorters),
+    handles = Wrapper:unwrap_array(this.handles),
+    columns = Wrapper:unwrap_array(this.columns),
   }
 end
 

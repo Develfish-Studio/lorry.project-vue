@@ -8,23 +8,25 @@ local Execution = {}
 
 export type Execution = typeof(Execution) & Wrapper.Unwrappable<Unwrapped>
 
+export type Bindings = {[string]: any}
+
 export type ExecutionProps = {
   query: Query.Query,
-  bindings: {[string]: any},
+  bindings: Bindings,
 }
 
 export type Unwrapped = {
   query: Query.Unwrapped,
-  bindings: {[string]: any},
+  bindings: Bindings,
 }
 
 export type ExecutionImpl = Execution & ExecutionProps
 
 function Execution:new(o: ExecutionProps): Execution
-  return Meta:type(o, self, "Page.Execution")
+  return Meta:type(o, self, "Dialog.Execution")
 end
 
-function Execution:from(query, bindings: {[string]: any}?): Execution
+function Execution:from(query, bindings: Bindings?): Execution
   return Execution:new({
     query = query,
     bindings = bindings or Meta:table {},
@@ -39,4 +41,4 @@ function Execution:unwrap(): Unwrapped
   }
 end
 
-return Execution
+return Query

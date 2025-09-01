@@ -66,9 +66,10 @@ end
 
 function Docker:unwrap_docker(): UnwrappedDocker
   local this = self::DockerImpl
+  local project = this.project::Project.ProjectImpl
   return {
     filename = this.filename or 'Dockerfile',
-    namespace = this.namespace or this.project.name,
+    namespace = this.namespace or project.name,
     version = this.version or '1.0.0',
     images = this.images
   }

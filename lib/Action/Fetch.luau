@@ -1,21 +1,32 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
+--!strict
 
-local Fetch = {
-  __type = 'Fetch',
-  request = nil,
-  name = nil,
-  bindings = nil,
+local Meta = require('@lorry.utils/lib/Meta')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+local Request = require('../Transport/Request/Request')
+
+local Fetch = {}
+
+export type Fetch = typeof(Fetch) & Wrapper.Unwrappable<Unwrapped>
+
+export type FetchProps = {
+  request: Request.Request,
+  name: string,
+  bindings: {[string]: any},
 }
 
-function Fetch:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type Unwrapped = {
+  request: Request.Unwrapped,
+  name: string,
+  bindings: {[string]: any},
+}
+
+export type FetchImpl = Fetch & FetchProps
+
+function Fetch:new(o: FetchProps): Fetch
+  return Meta:type(o, self, "Action.Fetch")
 end
 
-function Fetch:from(request, name: string, bindings: table)
+function Fetch:from(request, name: string, bindings: {[string]: any}?): Fetch
   return Fetch:new({
     request = request,
     name = name,
@@ -23,11 +34,12 @@ function Fetch:from(request, name: string, bindings: table)
   })
 end
 
-function Fetch:unwrap()
+function Fetch:unwrap(): Unwrapped
+  local this = self::FetchImpl
   return {
-    request = self.request:unwrap(),
-    name = self.name,
-    bindings = self.bindings,
+    request = this.request:unwrap(),
+    name = this.name,
+    bindings = this.bindings,
   }
 end
 

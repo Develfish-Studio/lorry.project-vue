@@ -27,7 +27,7 @@ export type Unwrapped = {
 export type PropImpl = Prop & PropProps
 
 function Prop:new(o: PropProps): Prop
-  return Meta:type(o, self, "Action.Prop")
+  return Meta:type(o, self, "Dialog.Prop")
 end
 
 function Prop:from_type(name: string, ts_type: string?): Prop
@@ -38,7 +38,7 @@ function Prop:from_type(name: string, ts_type: string?): Prop
   })
 end
 
-function Prop:from_structure(name: string, structure: Structure.Structure)
+function Prop:from_structure(name: string, structure: Structure.Structure): Prop
   assert(name ~= nil)
   assert(structure ~= nil)
   return Prop:new({
@@ -47,7 +47,7 @@ function Prop:from_structure(name: string, structure: Structure.Structure)
   })
 end
 
-function Prop:from_structure_array(name: string, structure: Structure.Structure)
+function Prop:from_structure_array(name: string, structure: Structure.Structure): Prop
   assert(name ~= nil)
   assert(structure ~= nil)
   return Prop:new({
@@ -57,13 +57,13 @@ function Prop:from_structure_array(name: string, structure: Structure.Structure)
   })
 end
 
-function Prop:with_optional(is_optional: boolean?)
+function Prop:with_optional(is_optional: boolean?): Prop
   local this = self::PropImpl
   this.is_optional = is_optional == nil or is_optional == true
   return this
 end
 
-function Prop:with_array(is_array: boolean?)
+function Prop:with_array(is_array: boolean?): Prop
   local this = self::PropImpl
   this.is_array = is_array == nil or is_array == true
   return this

@@ -1,30 +1,41 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
+--!strict
 
-local Request = {
-  __type = 'Request',
-  request = nil,
-  bindings = nil,
+local Meta = require('@lorry.utils/lib/Meta')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+local TransportRequest = require('../Transport/Request/Request')
+
+local Request = {}
+
+export type Request = typeof(Request) & Wrapper.Unwrappable<Unwrapped>
+
+export type RequestProps = {
+  request: TransportRequest.Request,
+  bindings: {[string]: any},
 }
 
-function Request:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type Unwrapped = {
+  request: TransportRequest.Unwrapped,
+  bindings: {[string]: any},
+}
+
+export type RequestImpl = Request & RequestProps
+
+function Request:new(o: RequestProps): Request
+  return Meta:type(o, self, "Action.Request")
 end
 
-function Request:from(request, bindings: table)
+function Request:from(request, bindings: {[string]: any}?): Request
   return Request:new({
     request = request,
     bindings = bindings or Meta:table {},
   })
 end
 
-function Request:unwrap()
+function Request:unwrap(): Unwrapped
+  local this = self::RequestImpl
   return {
-    request = self.request:unwrap(),
-    bindings = self.bindings,
+    request = this.request:unwrap(),
+    bindings = this.bindings,
   }
 end
 

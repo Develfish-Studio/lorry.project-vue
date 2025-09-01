@@ -22,7 +22,11 @@ export type Unwrapped = {
   tools: {string},
 }
 
-export type EditorJSImpl = EditorJS & EditorJSProps
+export type EditorJSImpl =
+  & EditorJS
+  & EditorJSProps
+  & Project.IHaveProject
+  & Project.IHaveName
 
 function EditorJS:new(o: EditorJSProps): EditorJS
   return Meta:type(o, self, "Control.EditorJS")
@@ -56,6 +60,16 @@ function EditorJS:unwrap(): Unwrapped
     editor = this:unwrap_editor(),
     tools = this.tools,
   }
+end
+
+function EditorJS:get_project(): Project.Project
+  local this = self::EditorJSImpl
+  return this.project
+end
+
+function EditorJS:get_name(): string
+  local this = self::EditorJSImpl
+  return this.name
 end
 
 return EditorJS

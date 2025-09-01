@@ -19,7 +19,7 @@ import SearchPicker{{f.control.pascal_name}} from '../controls/SearchPicker{{f.c
 {%- endif %}
 {%- endfor %}
 {%- for h in handles %}
-import { useAction{{h.action.action.pascal_name}} } from '../../actions/useAction{{h.action.action.pascal_name}}'
+import { useAction{{h.action.pascal_name}} } from '../../actions/useAction{{h.action.pascal_name}}'
 {%- endfor %}
 
 {%- if request is containing('structure') %}
@@ -141,11 +141,11 @@ const sortersMenuItems = ref([
 {%- if handles | length > 0 %}
 {# Blank line #}
 {%- for h in handles %}
-const action{{h.action.action.pascal_name}} = useAction{{h.action.action.pascal_name}}()
+const action{{h.action.pascal_name}} = useAction{{h.action.pascal_name}}()
 {%- endfor %}
 {%- for h in handles %}
 {# Blank line #}
-action{{h.action.action.pascal_name}}.emitter
+action{{h.action.pascal_name}}.emitter
   .on('success', (data: any) => {
     console.log(data)
     {%- for r in h.on_success %}
@@ -163,7 +163,7 @@ action{{h.action.action.pascal_name}}.emitter
 {# Blank line #}
 async function handle{{h.handle.pascal_name}}() {
   {%- if h.action.props | length > 0 %}
-  action{{h.action.action.pascal_name}}.execute({
+  action{{h.action.pascal_name}}.execute({
     {%- for name, value in h.handle.bindings %}
     {%- if name != value %}
     {{name}}: {{value}},
@@ -173,7 +173,7 @@ async function handle{{h.handle.pascal_name}}() {
     {%- endfor %}
   })
   {%- else %}
-  action{{h.action.action.pascal_name}}.execute()
+  action{{h.action.pascal_name}}.execute()
   {%- endif %}
 }
 {%- endfor %}

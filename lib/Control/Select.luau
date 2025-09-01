@@ -37,7 +37,11 @@ export type Unwrapped = {
   request: Request.UnwrappedRequest,
 }
 
-export type SelectImpl = Select & SelectProps
+export type SelectImpl =
+  & Select
+  & SelectProps
+  & Project.IHaveProject
+  & Project.IHaveName
 
 function Select:new(o: SelectProps): Select
   return Meta:type(o, self, "Control.Select")
@@ -101,6 +105,18 @@ function Select:unwrap(): Unwrapped
     request = request:unwrap_request(),
     select = this:unwrap_select(),
   }
+end
+
+function Select:get_project(): Project.Project
+  local this = self::SelectImpl
+  local request = this.request::Request.RequestImpl
+  local remote = request.remote::Remote.RemoteImpl
+  return remote.project
+end
+
+function Select:get_name(): string
+  local this = self::SelectImpl
+  return this.name
 end
 
 return Select

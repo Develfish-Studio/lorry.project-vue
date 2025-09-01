@@ -49,7 +49,11 @@ export type Unwrapped = {
   imports: {Import},
 }
 
-export type SymbolImpl = Symbol & SymbolProps
+export type SymbolImpl =
+  & Symbol
+  & SymbolProps
+  & Project.IHaveProject
+  & Project.IHaveName
 
 function Symbol:new(o): Symbol
   return Meta:type(o, self, "Control.Symbol")
@@ -145,6 +149,16 @@ function Symbol:unwrap(): Unwrapped
     variables = this.variables,
     imports = this.imports,
   }
+end
+
+function Symbol:get_project(): Project.Project
+  local this = self::SymbolImpl
+  return this.project
+end
+
+function Symbol:get_name(): string
+  local this = self::SymbolImpl
+  return this.name
 end
 
 return Symbol

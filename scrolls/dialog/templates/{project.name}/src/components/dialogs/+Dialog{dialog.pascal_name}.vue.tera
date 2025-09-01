@@ -25,19 +25,19 @@ import { {{calls.submit.request.request.camel_name}}Request } from '../../reques
 {%- for prop in props | filter(attribute='structure') | unique(attribute='structure.pascal_name') %}
 import { Structure{{prop.structure.pascal_name}} } from '../../structures/Structure{{prop.structure.pascal_name}}';
 {%- endfor %}
-{%- for f in fields | filter(attribute='field.kind', value='Select') | unique(attribute='control.pascal_name') %}
+
+{%- for f in fields | filter(attribute='field.kind', value='Control.Select') | unique(attribute='control.pascal_name') %}
 import Select{{f.control.pascal_name}} from '../controls/Select{{f.control.pascal_name}}.vue';
 {%- endfor %}
-{%- for f in fields | filter(attribute='field.kind', value='Search') | unique(attribute='control.pascal_name') %}
+{%- for f in fields | filter(attribute='field.kind', value='Control.Search') | unique(attribute='control.pascal_name') %}
 import Search{{f.control.pascal_name}} from '../controls/Search{{f.control.pascal_name}}.vue';
 {%- endfor %}
-{%- for f in fields | filter(attribute='field.kind', value='UploadS3') | unique(attribute='field.kind') %}
+{%- for f in fields | filter(attribute='field.kind', value='Control.UploadS3') | unique(attribute='control.pascal_name') %}
 import UploadS3{{f.control.pascal_name}} from '../controls/UploadS3{{f.control.pascal_name}}.vue';
 {%- endfor %}
-{%- for f in fields | filter(attribute='field.kind', value='EditorJS') | unique(attribute='field.kind') %}
+{%- for f in fields | filter(attribute='field.kind', value='Control.EditorJS') | unique(attribute='control.pascal_name') %}
 import EditorJS{{f.control.pascal_name}} from '../controls/EditorJS{{f.control.pascal_name}}.vue';
 {%- endfor %}
-
 export type Dialog{{dialog.pascal_name}}Props = {
   {%- if props | length > 0 %}
   {%- for prop in props %}
@@ -166,6 +166,7 @@ async function handleClose() {
   >
     <form @submit.prevent="handleSubmit">
       <div class="mb-2 grid grid-cols-1 gap-3">
+      {#
         {%- for f in fields %}
         {%- if f.field.kind == 'Text' %}
         <div>
@@ -182,17 +183,22 @@ async function handleClose() {
           <label class="block text-sm mb-1">{{f.field.title_name}}:</label>
           <ToggleButton v-model="form.{{f.field.camel_name}}" class="min-w-[8rem]" />
         </div>
-        {%- elif f.field.kind == 'Select' %}
+        {%- elif f.field.kind == 'Control.Select' %}
         <div>
           <label class="block text-sm mb-1">{{f.field.title_name}}:</label>
           <Select{{f.control.pascal_name}} v-model="form.{{f.field.camel_name}}" class="w-full" />
         </div>
-        {%- elif f.field.kind == 'UploadS3' %}
+        {%- elif f.field.kind == 'Control.Search' %}
+        <div>
+          <label class="block text-sm mb-1">{{f.field.title_name}}:</label>
+          <Search{{f.control.pascal_name}} v-model="form.{{f.field.camel_name}}" class="w-full" />
+        </div>
+        {%- elif f.field.kind == 'Control.UploadS3' %}
         <div>
           <label class="block text-sm mb-1">{{f.field.title_name}}:</label>
           <UploadS3{{f.control.pascal_name}} v-model="form.{{f.field.camel_name}}" class="w-full" />
         </div>
-        {%- elif f.field.kind == 'EditorJS' %}
+        {%- elif f.field.kind == 'Control.EditorJS' %}
         <div>
           <label class="block text-sm mb-1">{{f.field.title_name}}:</label>
           <EditorJS{{f.control.pascal_name}} v-model="form.{{f.field.camel_name}}" class="w-full" />
@@ -205,6 +211,7 @@ async function handleClose() {
         <Skeleton height="2rem" class="mb-2"></Skeleton>
         <Skeleton width="10rem" height="4rem"></Skeleton>
         {%- endfor %}
+        #}
       </div>
       <div class="flex justify-end gap-2">
         <Button type="submit" label="Send"></Button>
