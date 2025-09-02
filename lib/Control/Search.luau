@@ -5,10 +5,11 @@ local Project = require('@lorry.project/lib/Project')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Request = require('../Transport/Request/Request')
 local Remote = require('../Transport/Remote')
+local ControlTypes = require('./ControlTypes')
 
 local Search = {}
 
-export type Search = typeof(Search) & Wrapper.Unwrappable<Unwrapped>
+export type Search = typeof(Search) & ControlTypes.Search & Wrapper.Unwrappable<Unwrapped>
 
 export type Locator = {
   name: string,
@@ -30,7 +31,7 @@ export type UnwrappedSearch = Wrapper.UnwrappedName & {
   field_description: Locator?,
 }
 
-export type Unwrapped = {
+export type Unwrapped = ControlTypes.UnwrappedEditable & {
   project: Project.UnwrappedProject,
   search: UnwrappedSearch,
   remote: Remote.UnwrappedRemote,

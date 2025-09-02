@@ -3,10 +3,11 @@
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Query = require('../Query/Query')
+local DialogTypes = require('./DialogTypes')
 
 local Execution = {}
 
-export type Execution = typeof(Execution) & Wrapper.Unwrappable<Unwrapped>
+export type Execution = typeof(Execution) & DialogTypes.Execution & Wrapper.Unwrappable<Unwrapped>
 
 export type Bindings = {[string]: any}
 
@@ -15,7 +16,7 @@ export type ExecutionProps = {
   bindings: Bindings,
 }
 
-export type Unwrapped = {
+export type Unwrapped =  DialogTypes.UnwrappedChild & {
   query: Query.Unwrapped,
   bindings: Bindings,
 }

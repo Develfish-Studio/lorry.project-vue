@@ -5,10 +5,11 @@ local Project = require('@lorry.project/lib/Project')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Request = require('../Transport/Request/Request')
 local Remote = require('../Transport/Remote')
+local ControlTypes = require('./ControlTypes')
 
 local UploadS3 = {}
 
-export type UploadS3 = typeof(UploadS3) & Wrapper.Unwrappable<Unwrapped>
+export type UploadS3 = typeof(UploadS3) & ControlTypes.UploadS3 & Wrapper.Unwrappable<Unwrapped>
 
 export type UploadS3Props = {
   request: Request.Request,
@@ -28,7 +29,7 @@ export type UnwrappedUpload = Wrapper.UnwrappedName & {
   check_content_length: boolean,
 }
 
-export type Unwrapped = {
+export type Unwrapped = ControlTypes.UnwrappedEditable & {
   project: Project.UnwrappedProject,
   request: Request.UnwrappedRequest,
   upload: UnwrappedUpload,

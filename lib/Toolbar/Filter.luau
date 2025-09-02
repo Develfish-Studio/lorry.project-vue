@@ -3,9 +3,7 @@
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Project = require('@lorry.project/lib/Project')
-
-local Select = require('../Control/Select')
-local Search = require('../Control/Search')
+local ControlTypes = require('../Control/ControlTypes')
 
 local Filter = {}
 
@@ -15,7 +13,7 @@ export type FilterKind =
   | 'select'
   | 'search'
 
-export type Control = Select.Select | Search.Search
+export type Control = ControlTypes.Select | ControlTypes.Search
 
 export type FilterProps = {
   kind: FilterKind,
@@ -30,7 +28,7 @@ export type UnwrappedFilter = Wrapper.UnwrappedName & {
 export type Unwrapped = {
   project: Project.UnwrappedProject,
   filter: UnwrappedFilter,
-  control: Search.UnwrappedSearch | Select.UnwrappedSelect
+  control: ControlTypes.UnwrappedEditable
 }
 
 export type FilterImpl = Filter & FilterProps
@@ -39,7 +37,7 @@ function Filter:new(o: FilterProps): Filter
   return Meta:type(o, self, "Toolbar.Filter")
 end
 
-function Filter:from_select(control: Select.Select, name: string?): Filter
+function Filter:from_select(control: ControlTypes.Select, name: string?): Filter
   assert(control ~= nil)
   return Filter:new({
     kind = 'select',
@@ -48,7 +46,7 @@ function Filter:from_select(control: Select.Select, name: string?): Filter
   })
 end
 
-function Filter:from_search(control: Search.Search, name: string?): Filter
+function Filter:from_search(control: ControlTypes.Search, name: string?): Filter
   assert(control ~= nil)
   return Filter:new({
     kind = 'search',
@@ -64,12 +62,12 @@ function Filter:unwrap_filter(): UnwrappedFilter
   }
 end
 
-function Filter:unwrap_control(): Select.UnwrappedSelect | Search.UnwrappedSearch
+function Filter:unwrap_control(): ControlTypes.UnwrappedEditable
   local this = self::FilterImpl
   if this.kind == 'select' then
-    return (this.control::Select.Select):unwrap_select()
+    return (this.control::ControlTypes.Select):unwrap_select()
   elseif this.kind == 'search' then
-    return (this.control::Search.Search):unwrap_search()
+    return (this.control::ControlTypes.Search):unwrap_search()
   else
     error("Unsupported control:" .. this.kind)
   end

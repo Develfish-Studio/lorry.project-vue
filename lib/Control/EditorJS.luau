@@ -3,10 +3,11 @@
 local Meta = require('@lorry.utils/lib/Meta')
 local Project = require('@lorry.project/lib/Project')
 local Wrapper = require('@lorry.project/lib/Wrapper')
+local ControlTypes = require('./ControlTypes')
 
 local EditorJS = {}
 
-export type EditorJS = typeof(EditorJS) & Wrapper.Unwrappable<Unwrapped>
+export type EditorJS = typeof(EditorJS) & ControlTypes.EditorJS & Wrapper.Unwrappable<Unwrapped>
 
 export type EditorJSProps = {
   project: Project.Project,
@@ -16,7 +17,7 @@ export type EditorJSProps = {
 
 export type UnwrappedEditor = Wrapper.UnwrappedName
 
-export type Unwrapped = {
+export type Unwrapped = ControlTypes.UnwrappedEditable & {
   project: Project.UnwrappedProject,
   editor: UnwrappedEditor,
   tools: {string},

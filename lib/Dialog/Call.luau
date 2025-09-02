@@ -3,10 +3,11 @@
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Request = require('../Transport/Request/Request')
+local DialogTypes = require('./DialogTypes')
 
 local Call = {}
 
-export type Call = typeof(Call) & Wrapper.Unwrappable<Unwrapped>
+export type Call = typeof(Call) & DialogTypes.Call & Wrapper.Unwrappable<Unwrapped>
 
 export type CallKind =
   | 'submit'
@@ -23,7 +24,7 @@ export type UnwrappedCall = {
   expression: string?
 }
 
-export type Unwrapped = {
+export type Unwrapped = DialogTypes.UnwrappedChild & {
   call: UnwrappedCall,
   request: Request.Unwrapped,
   bindings: {[string]: any},

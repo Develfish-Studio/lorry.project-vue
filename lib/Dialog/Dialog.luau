@@ -7,6 +7,7 @@ local Prop = require('./Prop')
 local Execution = require('./Execution')
 local Field = require('./Field')
 local Call = require('./Call')
+local DialogTypes = require('./DialogTypes')
 
 local Dialog = {
   Prop = Prop,
@@ -20,10 +21,10 @@ export type Dialog = typeof(Dialog) & Wrapper.Unwrappable<Unwrapped>
 export type DialogProps = {
   project: Project.Project,
   name: string,
-  props: {Prop.Prop},
-  queries: {Execution.Execution},
-  fields: {Field.Field},
-  calls: {Call.Call},
+  props: {DialogTypes.Prop},
+  queries: {DialogTypes.Execution},
+  fields: {DialogTypes.Field},
+  calls: {DialogTypes.Call},
 }
 
 export type UnwrappedDialog = Wrapper.UnwrappedName
@@ -31,17 +32,11 @@ export type UnwrappedDialog = Wrapper.UnwrappedName
 export type Unwrapped = {
   project: Project.UnwrappedProject,
   dialog: UnwrappedDialog,
-  props: {Prop.Unwrapped},
-  fields: {Field.Unwrapped},
-  queries: {Execution.Unwrapped},
-  calls: {submit: Call.Unwrapped?}
+  props: {DialogTypes.UnwrappedChild},
+  queries: {DialogTypes.UnwrappedChild},
+  fields: {DialogTypes.UnwrappedChild},
+  calls: {submit: DialogTypes.UnwrappedChild?}
 }
-
-export type AnyChild =
-  | Prop.Prop
-  | Execution.Execution
-  | Field.Field
-  | Call.Call
 
 export type DialogImpl = Dialog & DialogProps
 
@@ -62,25 +57,25 @@ function Dialog:from(project: Project.Project, name: string): Dialog
   })
 end
 
-function Dialog:setup(children: {AnyChild}): Dialog
+function Dialog:setup(children: {DialogTypes.AnyChild}): Dialog
   local this = self::DialogImpl
   for _, child in children do
-    this:with_child(child::AnyChild)
+    this:with_child(child::DialogTypes.AnyChild)
   end
   return this
 end
 
-function Dialog:with_child(child: AnyChild): Dialog
+function Dialog:with_child(child: DialogTypes.AnyChild): Dialog
   local this = self::DialogImpl
   local tag = Meta:typeof(child)
   if tag == 'Dialog.Call' then
-    this.calls[#this.calls + 1] = child::Call.Call
+    this.calls[#this.calls + 1] = child::DialogTypes.Call
   elseif tag == 'Dialog.Field' then
-    this.fields[#this.fields + 1] = child::Field.Field
+    this.fields[#this.fields + 1] = child::DialogTypes.Field
   elseif tag == 'Dialog.Execution' then
-    this.queries[#this.queries + 1] = child::Execution.Execution
+    this.queries[#this.queries + 1] = child::DialogTypes.Execution
   elseif tag == 'Dialog.Prop' then
-    this.props[#this.props + 1] = child::Prop.Prop
+    this.props[#this.props + 1] = child::DialogTypes.Prop
   end
   return this
 end
@@ -108,8 +103,8 @@ function Dialog:unwrap(): Unwrapped
     project = this.project:unwrap_project(),
     dialog = this:unwrap_dialog(),
     props = Wrapper:unwrap_array(this.props),
-    fields = Wrapper:unwrap_array(this.fields),
     queries = Wrapper:unwrap_array(this.queries),
+    fields = Wrapper:unwrap_array(this.fields),
     calls = this:unwrap_calls(),
   }
 end

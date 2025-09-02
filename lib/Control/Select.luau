@@ -5,10 +5,11 @@ local Project = require('@lorry.project/lib/Project')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Request = require('../Transport/Request/Request')
 local Remote = require('../Transport/Remote')
+local ControlTypes = require('./ControlTypes')
 
 local Select = {}
 
-export type Select = typeof(Select) & Wrapper.Unwrappable<Unwrapped>
+export type Select = typeof(Select) & ControlTypes.Select & Wrapper.Unwrappable<Unwrapped>
 
 export type Locator = {
   name: string,
@@ -30,7 +31,7 @@ export type UnwrappedSelect = Wrapper.UnwrappedName & {
   field_description: Locator?,
 }
 
-export type Unwrapped = {
+export type Unwrapped = ControlTypes.UnwrappedEditable & {
   project: Project.UnwrappedProject,
   select: UnwrappedSelect,
   remote: Remote.UnwrappedRemote,

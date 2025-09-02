@@ -3,10 +3,11 @@
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Structure = require('../Structure/Structure')
+local DialogTypes = require('./DialogTypes')
 
 local Prop = {}
 
-export type Prop = typeof(Prop) & Wrapper.Unwrappable<Unwrapped>
+export type Prop = typeof(Prop) & DialogTypes.Prop & Wrapper.Unwrappable<Unwrapped>
 
 export type PropProps = {
   name: string,
@@ -16,7 +17,7 @@ export type PropProps = {
   is_optional: boolean?,
 }
 
-export type Unwrapped = {
+export type Unwrapped = DialogTypes.UnwrappedChild & {
   name: string,
   structure: Structure.UnwrappedStructure?,
   ts_type: string?,

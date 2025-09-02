@@ -3,11 +3,8 @@
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Project = require('@lorry.project/lib/Project')
-local Control = require('../Control/Control')
-local Select = require('../Control/Select')
-local Search = require('../Control/Search')
-local EditorJS = require('../Control/EditorJS')
-local UploadS3 = require('../Control/UploadS3')
+local ControlTypes = require('../Control/ControlTypes')
+local DialogTypes = require('./DialogTypes')
 
 local Field = {}
 
@@ -20,11 +17,11 @@ export type FieldKind =
   | 'Control.UploadS3'
   | 'Control.EditorJS'
 
-export type Field = typeof(Field) & Wrapper.Unwrappable<Unwrapped>
+export type Field = typeof(Field) & DialogTypes.Field & Wrapper.Unwrappable<Unwrapped>
 
 export type FieldProps = {
   kind: FieldKind,
-  control: Control.AnyEditableControl?,
+  control: ControlTypes.AnyEditable?,
   name: string?,
   value: string?,
   ts_type: string?,
@@ -38,9 +35,9 @@ export type UnwrappedField = Wrapper.UnwrappedName & {
   expression: string?,
 }
 
-export type Unwrapped = {
+export type Unwrapped = DialogTypes.UnwrappedChild & {
   field: UnwrappedField,
-  control: Control.UnwrappedEditable?
+  control: ControlTypes.UnwrappedEditable?
 }
 
 export type FieldImpl = Field & FieldProps
@@ -49,7 +46,7 @@ function Field:new(o: FieldProps): Field
   return Meta:type(o, self, "Dialog.Field")
 end
 
-function Field:from_select(control: Select.Select, name: string?): Field
+function Field:from_select(control: ControlTypes.Select, name: string?): Field
   assert(control ~= nil)
   return Field:new({
     kind = 'Control.Select',
@@ -57,7 +54,7 @@ function Field:from_select(control: Select.Select, name: string?): Field
   })
 end
 
-function Field:from_search(control: Search.Search, name: string?): Field
+function Field:from_search(control: ControlTypes.Search, name: string?): Field
   assert(control ~= nil)
   return Field:new({
     kind = 'Control.Search',
@@ -66,7 +63,7 @@ function Field:from_search(control: Search.Search, name: string?): Field
   })
 end
 
-function Field:from_upload_s3(control: UploadS3.UploadS3, name: string?): Field
+function Field:from_upload_s3(control: ControlTypes.UploadS3, name: string?): Field
   assert(control ~= nil)
   return Field:new({
     kind = 'Control.UploadS3',
@@ -75,7 +72,7 @@ function Field:from_upload_s3(control: UploadS3.UploadS3, name: string?): Field
   })
 end
 
-function Field:from_editor_js(control: EditorJS.EditorJS, name: string?): Field
+function Field:from_editor_js(control: ControlTypes.EditorJS, name: string?): Field
   assert(control ~= nil)
   return Field:new({
     kind = 'Control.EditorJS',
@@ -128,19 +125,19 @@ function Field:with_expression(expression: string?): Field
   return this
 end
 
-function Field:unwrap_control(): Control.UnwrappedEditable?
+function Field:unwrap_control(): ControlTypes.UnwrappedEditable?
   local this = self::FieldImpl
   if this.control ~= nil then
     local control = this.control
     local tag = Meta:typeof(control)
     if tag == 'Control.Select' then
-      return (control::Select.Select):unwrap_select()
+      return (control::ControlTypes.Select):unwrap_select()
     elseif tag == 'Control.Search' then
-      return (control::Search.Search):unwrap_search()
+      return (control::ControlTypes.Search):unwrap_search()
     elseif tag == 'Control.UploadS3' then
-      return (control::UploadS3.UploadS3):unwrap_upload()
+      return (control::ControlTypes.UploadS3):unwrap_upload()
     elseif tag == 'Control.EditorJS' then
-      return (control::EditorJS.EditorJS):unwrap_editor()
+      return (control::ControlTypes.EditorJS):unwrap_editor()
     end
   end
   return nil
