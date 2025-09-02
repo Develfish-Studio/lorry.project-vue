@@ -2,10 +2,11 @@
 
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
+local PageTypes = require('./PageTypes')
 
 local Heading = {}
 
-export type Heading = typeof(Heading) & Wrapper.Unwrappable<Unwrapped>
+export type Heading = typeof(Heading) & PageTypes.AnyNode & Wrapper.Unwrappable<Unwrapped>
 
 export type HeadingTag = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
 
@@ -19,7 +20,7 @@ export type UnwrappedHeading = Wrapper.UnwrappedName & {
   tag: HeadingTag?,
 }
 
-export type Unwrapped = {
+export type Unwrapped = PageTypes.UnwrappedChild & {
   type: string,
   heading: UnwrappedHeading,
   roles: {string}

@@ -3,17 +3,18 @@
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local DialogRef = require('../Dialog/Dialog')
+local ActionTypes = require('./ActionTypes')
 
 local Dialog = {}
 
-export type Dialog = typeof(Dialog) & Wrapper.Unwrappable<Unwrapped>
+export type Dialog = typeof(Dialog) & ActionTypes.Dialog & Wrapper.Unwrappable<Unwrapped>
 
 export type DialogProps = {
   dialog: DialogRef.Dialog,
   bindings: {[string]: any},
 }
 
-export type Unwrapped = {
+export type Unwrapped = ActionTypes.UnwrappedChild & {
   dialog: DialogRef.Unwrapped,
   bindings: {[string]: any},
 }

@@ -2,10 +2,11 @@
 
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
+local ToolbarTypes = require('./ToolbarTypes')
 
 local Column = {}
 
-export type Column = typeof(Column) & Wrapper.Unwrappable<Unwrapped>
+export type Column = typeof(Column) & ToolbarTypes.Column & Wrapper.Unwrappable<Unwrapped>
 
 export type ColumnProps = {
   name: string,
@@ -16,7 +17,7 @@ export type UnwrappedColumn = Wrapper.UnwrappedName & {
   ts_type: string,
 }
 
-export type Unwrapped = {
+export type Unwrapped = ToolbarTypes.UnwrappedChild & {
   column: UnwrappedColumn
 }
 

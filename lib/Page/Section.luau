@@ -4,10 +4,11 @@ local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Grid = require('../Grid/Grid')
 local Toolbar = require('../Toolbar/Toolbar')
+local PageTypes = require('./PageTypes')
 
 local Section = {}
 
-export type Section = typeof(Section) & Wrapper.Unwrappable<Unwrapped>
+export type Section = typeof(Section) & PageTypes.AnyNode & Wrapper.Unwrappable<Unwrapped>
 
 export type SectionKind =
   | 'widget'
@@ -32,7 +33,7 @@ export type UnwrappedSection = Wrapper.UnwrappedName & {
   kind: SectionKind,
 }
 
-export type Unwrapped = {
+export type Unwrapped = PageTypes.UnwrappedChild & {
   type: string,
   section: UnwrappedSection,
   roles: {string},

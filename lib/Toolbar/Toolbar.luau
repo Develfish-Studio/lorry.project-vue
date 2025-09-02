@@ -10,6 +10,7 @@ local Filter = require('./Filter')
 local Sorter = require('./Sorter')
 local Handle = require('./Handle')
 local Column = require('./Column')
+local ToolbarTypes = require('./ToolbarTypes')
 
 local Toolbar = {
   Filter = Filter,
@@ -23,10 +24,10 @@ export type Toolbar = typeof(Toolbar)
 export type ToolbarProps = {
   query: Query.Query,
   name: string,
-  columns: {Column.Column},
-  filters: {Filter.Filter},
-  sorters: {Sorter.Sorter},
-  handles: {Handle.Handle},
+  columns: {ToolbarTypes.Column},
+  filters: {ToolbarTypes.Filter},
+  sorters: {ToolbarTypes.Sorter},
+  handles: {ToolbarTypes.Handle},
 }
 
 export type UnwrappedToolbar = Wrapper.UnwrappedName
@@ -37,19 +38,13 @@ export type Unwrapped = {
   request: Request.UnwrappedRequest,
   query: Query.UnwrappedQuery,
   toolbar: UnwrappedToolbar,
-  filters: {Filter.Unwrapped},
-  sorters: {Sorter.Unwrapped},
-  handles: {Handle.Unwrapped},
-  columns: {Column.Unwrapped},
+  filters: {ToolbarTypes.UnwrappedChild},
+  sorters: {ToolbarTypes.UnwrappedChild},
+  handles: {ToolbarTypes.UnwrappedChild},
+  columns: {ToolbarTypes.UnwrappedChild},
 }
 
 export type ToolbarImpl = Toolbar & ToolbarProps
-
-export type AnyChild =
-  | Filter.Filter
-  | Sorter.Sorter
-  | Handle.Handle
-  | Column.Column
 
 function Toolbar:new(o): Toolbar
   return Meta:type(o, self, "Toolbar")
@@ -69,7 +64,7 @@ function Toolbar:from_query(query: Query.Query, name: string): Toolbar
     })
 end
 
-function Toolbar:setup(children: {AnyChild}): Toolbar
+function Toolbar:setup(children: {ToolbarTypes.AnyChild}): Toolbar
   local this = self::ToolbarImpl
   for _, child in children do
     this:with_child(child)
@@ -77,7 +72,7 @@ function Toolbar:setup(children: {AnyChild}): Toolbar
   return this
 end
 
-function Toolbar:with_child(child: AnyChild): Toolbar
+function Toolbar:with_child(child: ToolbarTypes.AnyChild): Toolbar
   local this = self::ToolbarImpl
   local tag = Meta:typeof(child)
   if tag == 'Toolbar.Filter' then

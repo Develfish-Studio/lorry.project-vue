@@ -4,10 +4,11 @@ local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Project = require('@lorry.project/lib/Project')
 local ControlTypes = require('../Control/ControlTypes')
+local ToolbarTypes = require('./ToolbarTypes')
 
 local Filter = {}
 
-export type Filter = typeof(Filter) & Wrapper.Unwrappable<Unwrapped>
+export type Filter = typeof(Filter) & ToolbarTypes.Filter & Wrapper.Unwrappable<Unwrapped>
 
 export type FilterKind =
   | 'select'
@@ -25,7 +26,7 @@ export type UnwrappedFilter = Wrapper.UnwrappedName & {
   kind: FilterKind
 }
 
-export type Unwrapped = {
+export type Unwrapped = ToolbarTypes.UnwrappedChild & {
   project: Project.UnwrappedProject,
   filter: UnwrappedFilter,
   control: ControlTypes.UnwrappedEditable

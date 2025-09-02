@@ -3,11 +3,11 @@
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Project = require('@lorry.project/lib/Project')
-
 local Prop = require('./Prop')
 local Fetch = require('./Fetch')
 local Dialog = require('./Dialog')
 local Request = require('./Request')
+local ActionTypes = require('./ActionTypes')
 
 local Action = {
   Prop = Prop,
@@ -16,34 +16,29 @@ local Action = {
   Request = Request,
 }
 
-export type Action = typeof(Action) & Wrapper.Unwrappable<Unwrapped>
+export type Action = typeof(Action) & ActionTypes.Action & Wrapper.Unwrappable<Unwrapped>
 
 export type ActionProps = {
   project: Project.Project,
-  request: Request.Request?,
-  dialog: Dialog.Dialog?,
+  request: ActionTypes.Request?,
+  dialog: ActionTypes.Dialog?,
   name: string,
-  props: {Prop.Prop},
-  fetchers: {Fetch.Fetch},
+  props: {ActionTypes.Prop},
+  fetchers: {ActionTypes.Fetch},
 }
 
 export type UnwrappedAction = Wrapper.UnwrappedName & {
-  props: {Prop.Unwrapped},
+  props: {ActionTypes.UnwrappedChild},
 }
 
-export type Unwrapped = {
+export type Unwrapped = ActionTypes.Unwrapped & {
   action: UnwrappedAction,
-  request: Request.Unwrapped?,
-  dialog: Dialog.Unwrapped?,
+  request: ActionTypes.UnwrappedChild?,
+  dialog: ActionTypes.UnwrappedChild?,
+  fetchers: {ActionTypes.UnwrappedChild},
 }
 
 export type ActionImpl = Action & ActionProps
-
-export type AnyChild =
-  | Prop.Prop
-  | Fetch.Fetch
-  | Request.Request
-  | Dialog.Dialog
 
 function Action:new(o: ActionProps): Action
   return Meta:type(o, self, "Action")
@@ -60,7 +55,7 @@ function Action:from(project: Project.Project, name: string): Action
   })
 end
 
-function Action:setup(children: {any}): Action
+function Action:setup(children: {ActionTypes.AnyChild}): Action
   local this = self::ActionImpl
   for _, child in children do
     this:with_child(child)
@@ -68,17 +63,17 @@ function Action:setup(children: {any}): Action
   return this
 end
 
-function Action:with_child(child: any): Action
+function Action:with_child(child: ActionTypes.AnyChild): Action
   local this = self::ActionImpl
   local tag = Meta:typeof(child)
   if tag == 'Action.Prop' then
-    this.props[#this.props + 1] = child
+    this.props[#this.props + 1] = child::ActionTypes.Prop
   elseif tag == 'Action.Fetch' then
-    this.fetchers[#this.fetchers + 1] = child
+    this.fetchers[#this.fetchers + 1] = child::ActionTypes.Fetch
   elseif tag == 'Action.Request' then
-    this.request = child
+    this.request = child::ActionTypes.Request
   elseif tag == 'Action.Dialog' then
-    this.dialog = child
+    this.dialog = child::ActionTypes.Dialog
   end
   return this
 end

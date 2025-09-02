@@ -3,17 +3,18 @@
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local TransportRequest = require('../Transport/Request/Request')
+local ActionTypes = require('./ActionTypes')
 
 local Request = {}
 
-export type Request = typeof(Request) & Wrapper.Unwrappable<Unwrapped>
+export type Request = typeof(Request) & ActionTypes.Request & Wrapper.Unwrappable<Unwrapped>
 
 export type RequestProps = {
   request: TransportRequest.Request,
   bindings: {[string]: any},
 }
 
-export type Unwrapped = {
+export type Unwrapped = ActionTypes.UnwrappedChild & {
   request: TransportRequest.Unwrapped,
   bindings: {[string]: any},
 }

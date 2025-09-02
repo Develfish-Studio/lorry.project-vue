@@ -2,10 +2,11 @@
 
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
+local PageTypes = require('./PageTypes')
 
 local Prop = {}
 
-export type Prop = typeof(Prop) & Wrapper.Unwrappable<Unwrapped>
+export type Prop = typeof(Prop) & PageTypes.AnyChild & Wrapper.Unwrappable<Unwrapped>
 
 export type PropSource =
   | 'route'
@@ -16,7 +17,7 @@ export type PropProps = {
   ts_type: string?,
 }
 
-export type Unwrapped = {
+export type Unwrapped = PageTypes.UnwrappedChild & {
   source: PropSource,
   name: string,
   ts_type: string,

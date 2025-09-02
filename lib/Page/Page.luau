@@ -4,22 +4,23 @@ local Meta = require('@lorry.utils/lib/Meta')
 local Project = require('@lorry.project/lib/Project')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Prop = require('./Prop')
-local Execution = require('./Execution')
+local Query = require('./Query')
 local Heading = require('./Heading')
 local Section = require('./Section')
+local PageTypes = require('./PageTypes')
 
 local Page = {
   Prop = Prop,
-  Execution = Execution,
+  Query = Query,
   Heading = Heading,
   Section = Section,
 }
 
 export type Page = typeof(Page) & Wrapper.Unwrappable<Unwrapped>
 
-export type AnyNode =
-  | Heading.Heading
-  | Section.Section
+-- export type AnyNode =
+--   | Heading.Heading
+--   | Section.Section
 
 export type Layout = {
   flex: boolean
@@ -28,9 +29,9 @@ export type Layout = {
 export type PageProps = {
   project: Project.Project,
   name: string,
-  children: {AnyNode},
-  queries: {Execution.Execution},
-  props: {Prop.Prop},
+  children: {PageTypes.AnyNode},
+  queries: {PageTypes.Query},
+  props: {PageTypes.Prop},
   layout: Layout,
 }
 
@@ -39,19 +40,13 @@ export type UnwrappedPage = Wrapper.UnwrappedName
 export type Unwrapped = {
   project: Project.UnwrappedProject,
   page: UnwrappedPage,
-  children: {Heading.Unwrapped | Section.Unwrapped},
-  queries: {Execution.Unwrapped},
-  props: {Prop.Unwrapped},
+  children: {PageTypes.UnwrappedChild},
+  queries: {PageTypes.UnwrappedChild},
+  props: {PageTypes.UnwrappedChild},
   layout: Layout,
 }
 
 export type PageImpl = Page & PageProps
-
-export type AnyChild =
-  | Heading.Heading
-  | Section.Section
-  | Execution.Execution
-  | Prop.Prop
 
 function Page:new(o: PageProps): Page
   return Meta:type(o, self, "Page")
@@ -77,7 +72,7 @@ function Page:with_flex(flex: boolean?): Page
   return this
 end
 
-function Page:setup(children: {AnyChild}): Page
+function Page:setup(children: {PageTypes.AnyChild}): Page
   local this = self::PageImpl
   for _, child in children do
     this:with_child(child)
@@ -85,17 +80,17 @@ function Page:setup(children: {AnyChild}): Page
   return this
 end
 
-function Page:with_child(child: AnyChild): Page
+function Page:with_child(child: PageTypes.AnyChild): Page
   local this = self::PageImpl
   local tag = Meta:typeof(child)
   if tag == 'Page.Heading' then
-    this.children[#this.children + 1] = child::Heading.Heading
+    this.children[#this.children + 1] = child::PageTypes.Heading
   elseif tag == 'Page.Section' then
-    this.children[#this.children + 1] = child::Section.Section
-  elseif tag == 'Page.Execution' then
-    this.queries[#this.queries + 1] = child::Execution.Execution
+    this.children[#this.children + 1] = child::PageTypes.Section
+  elseif tag == 'Page.Query' then
+    this.queries[#this.queries + 1] = child::PageTypes.Query
   elseif tag == 'Page.Prop' then
-    this.props[#this.props + 1] = child::Prop.Prop
+    this.props[#this.props + 1] = child::PageTypes.Prop
   end
   return this
 end
