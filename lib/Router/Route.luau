@@ -19,12 +19,12 @@ export type RouteProps = {
 export type UnwrappedRoute = Wrapper.UnwrappedName & {
   path: string,
   requires_auth: boolean,
+  roles: {string},
 }
 
 export type Unwrapped = {
   route: UnwrappedRoute,
   page: Page.UnwrappedPage?,
-  roles: {string},
 }
 
 export type RouteImpl = Route & RouteProps
@@ -33,7 +33,7 @@ function Route:new(o: RouteProps): Route
   return Meta:type(o, self, "Router.Route")
 end
 
-function Route:from(page: Page.Page?, name: string?)
+function Route:from(page: Page.Page?, name: string?): Route
   assert(page ~= nil or name ~= nil)
   return Route:new({
     page = page,
@@ -43,15 +43,15 @@ function Route:from(page: Page.Page?, name: string?)
   })
 end
 
-function Route:from_page(page: Page.Page, name: string)
+function Route:from_page(page: Page.Page, name: string?): Route
   return Route:from(page, name)
 end
 
-function Route:from_name(name: string)
+function Route:from_name(name: string): Route
   return Route:from(nil, name)
 end
 
-function Route:with_path(path: string)
+function Route:with_path(path: string): Route
   self.path = path
   return self
 end
@@ -62,7 +62,7 @@ function Route:with_role(role: string): Route
   return this
 end
 
-function Route:with_auth(requires_auth: boolean): Route
+function Route:with_auth(requires_auth: boolean?): Route
   local this = self::RouteImpl
   this.requires_auth = requires_auth == nil or requires_auth == true
   return this
@@ -74,6 +74,7 @@ function Route:unwrap_route(): UnwrappedRoute
   return Meta:append(Wrapper:unwrap_name(name)) {
     path = this.path or name,
     requires_auth = this.requires_auth,
+    roles = this.roles,
   }
 end
 
@@ -82,7 +83,6 @@ function Route:unwrap(): Unwrapped
   return {
     route = this:unwrap_route(),
     page = this.page and this.page:unwrap_page(),
-    roles = this.roles,
   }
 end
 

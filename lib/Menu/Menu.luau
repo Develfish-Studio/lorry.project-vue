@@ -1,81 +1,92 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
-local Item = require('vue/menu/Item')
+--!strict
+
+local Meta = require('@lorry.utils/lib/Meta')
+local Project = require('@lorry.project/lib/Project')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+local Item = require('./Item')
 
 local Menu = {
-  __type = 'Menu',
-
   Item = Item,
-
-  project = project,
-  items = nil,
-  requires_auth = false,
-  roles = nil,
 }
 
-function Menu:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type Menu = typeof(Menu) & Wrapper.Unwrappable<Unwrapped>
+
+export type MenuProps = {
+  project: Project.Project,
+  name: string,
+  items: {Item.Item},
+  requires_auth: boolean?,
+  roles: {string},
+}
+
+export type UnwrappedMenu = Wrapper.UnwrappedName & {
+  requires_auth: boolean,
+  roles: {string},
+  items: {Item.Unwrapped}
+}
+
+export type Unwrapped = {
+  project: Project.UnwrappedProject,
+  menu: UnwrappedMenu,
+}
+
+export type MenuImpl = Menu & MenuProps
+
+export type AnyChild = Item.Item
+
+function Menu:new(o: MenuProps): Menu
+  return Meta:type(o, self, "Menu")
 end
 
-function Menu:from(project: Project, name: string, items: table)
+function Menu:from(project: Project.Project, name: string): Menu
+  assert(project ~= nil)
   assert(name ~= nil)
   return Menu:new({
     project = project,
     name = name,
-    items = items or Meta:array {},
+    items = Meta:array {},
+    roles = Meta:array {},
   })
 end
 
-function Menu:with_rules(children: table)
-  children = children or {}
-
+function Menu:setup(children: {AnyChild}): Menu
+  local this = self::MenuImpl
   for _, child in children do
-    if child.__type == 'Item' then
-      self.items[#self.items + 1] = child
-    end
+    this:with_child(child)
   end
-
-  return self
+  return this
 end
 
-function Menu:with_roles(roles: table)
-  self.requires_auth = true
-  self.roles = roles
-  return self
-end
-
-function Menu:unwrap_items()
-  local items = Meta:array {}
-
-  for _, item in self.items do
-    items[#items + 1] = item:unwrap()
+function Menu:with_child(child: AnyChild): Menu
+  local this = self::MenuImpl
+  local tag = Meta:typeof(child)
+  if tag == 'Menu.Item' then
+    this.items[#this.items + 1] = child::Item.Item
   end
-
-  return items
+  return this
 end
 
-function Menu:unwrap_menu()
-  local name = self.name
-  return {
+function Menu:with_role(role: string): Menu
+  local this = self::MenuImpl
+  this.requires_auth = true
+  this.roles[#this.roles + 1] = role
+  return this
+end
+
+function Menu:unwrap_menu(): UnwrappedMenu
+  local this = self::MenuImpl
+  return Meta:append(Wrapper:unwrap_name(this.name)) {
     requires_auth = self.requires_auth,
-    roles = self.roles,
-    name = name,
-    snake_name = name,
-    camel_name = case.snakeToCamel(name),
-    pascal_name = case.snakeToPascal(name),
-    kebab_name = case.snakeToKebab(name),
-    title_name = case.snakeToTitle(name),
-    items = self:unwrap_items(),
+    roles = this.roles,
+    items = Wrapper:unwrap_array(this.items),
   }
 end
 
-function Menu:unwrap()
+function Menu:unwrap(): Unwrapped
+  local this = self::MenuImpl
   return {
-    project = self.project:unwrap_project(),
-    menu = self:unwrap_menu(),
+    project = this.project:unwrap_project(),
+    menu = this:unwrap_menu(),
   }
 end
 

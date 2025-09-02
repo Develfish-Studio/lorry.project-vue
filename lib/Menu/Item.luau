@@ -1,24 +1,40 @@
-local Meta = require('core/Meta')
-local case = require('core/util/string/case')
-local Router = require('vue/Router')
+--!strict
 
-local Item = {
-  __type = 'Item',
-  router = nil,
-  route = nil,
-  name = nil,
-  font_icon = nil,
-  items = nil,
+local Meta = require('@lorry.utils/lib/Meta')
+local Wrapper = require('@lorry.project/lib/Wrapper')
+local Router = require('../Router/Router')
+local Route = require('../Router/Route')
+local Page = require('../Page/Page')
+
+local Item = {}
+
+export type Item = typeof(Item) & Wrapper.Unwrappable<Unwrapped>
+
+export type ItemProps = {
+  router: Router.Router,
+  route: Route.Route,
+  name: string?,
+  font_icon: string?,
+  items: {Item},
 }
 
-function Item:new(o)
-  o = o or {}
-  setmetatable(o, self)
-  self.__index = self
-  return o
+export type UnwrappedItem = Wrapper.UnwrappedName
+
+export type Unwrapped = {
+  item: UnwrappedItem,
+  route: Route.UnwrappedRoute,
+  to: string,
+}
+
+export type ItemImpl = Item & ItemProps
+
+export type AnyChild = Item
+
+function Item:new(o: ItemProps): Item
+  return Meta:type(o, self, "Menu.Item")
 end
 
-function Item:from(router: Router, route: Router.Route, name: string)
+function Item:from(router: Router.Router, route: Route.Route, name: string?): Item
   assert(router ~= nil)
   assert(route ~= nil)
   return Item:new({
@@ -29,39 +45,43 @@ function Item:from(router: Router, route: Router.Route, name: string)
   })
 end
 
-function Item:from_route(router: Router, route: Router.Route, name: string, font_icon: string)
-  return Item:from(router, route, name, font_icon)
+function Item:from_route(router: Router.Router, route: Route.Route): Item
+  return Item:from(router, route)
 end
 
-function Item:from_name(name: string)
-  return Item:from(nil, nil, name)
-end
-
-function Item:with_rules(children: table)
-  children = children or {}
-
+function Item:setup(children: {AnyChild}): Item
+  local this = self::ItemImpl
   for _, child in children do
-    if child.__type == 'Item' then
-      self.items[#self.items + 1] = child
-    end
+    this:with_child(child)
   end
-
-  return self
+  return this
 end
 
-function Item:with_font_icon(font_icon: string)
-  self.font_icon = font_icon
-  return self
+function Item:with_child(child: AnyChild): Item
+  local this = self::ItemImpl
+  local tag = Meta:typeof(child)
+  if tag == 'Menu.Item' then
+    this.items[#this.items + 1] = child::Item
+  end
+  return this
 end
 
-function Item:with_route(route: Route)
-  self.route = route
-  return self
+function Item:with_font_icon(font_icon: string?)
+  local this = self::ItemImpl
+  this.font_icon = font_icon
+  return this
 end
 
-function Item:with_name(name: string)
-  self.name = name
-  return self
+function Item:with_route(route: Route.Route)
+  local this = self::ItemImpl
+  this.route = route
+  return this
+end
+
+function Item:with_name(name: string): Item
+  local this = self::ItemImpl
+  this.name = name
+  return this
 end
 
 function Item:unwrap_items()
@@ -74,26 +94,24 @@ function Item:unwrap_items()
   return items
 end
 
-function Item:unwrap_item()
-  local name = self.name or self.route.page.name
-  return {
-    name = name,
-    snake_name = name,
-    camel_name = case.snakeToCamel(name),
-    pascal_name = case.snakeToPascal(name),
-    kebab_name = case.snakeToKebab(name),
-    title_name = case.snakeToTitle(name),
-    font_icon = self.font_icon,
-    items = self:unwrap_items()
+function Item:unwrap_item(): UnwrappedItem
+  local this = self::ItemImpl
+  local route = this.route::Route.RouteImpl
+  local page = route.page::Page.PageImpl
+  return Meta:append(Wrapper:unwrap_name(this.name or page.name)) {
+    font_icon = this.font_icon,
+    items = Wrapper:unwrap_array(this.items)
   }
 end
 
-function Item:unwrap()
-  local route = self.route:unwrap_route()
-  local router_path = self.router and ('/' .. self.router.name) or ''
+function Item:unwrap(): Unwrapped
+  local this = self::ItemImpl
+  local route = this.route:unwrap_route()
+  local router = this.router::Router.RouterImpl
+  local router_path = this.router and ('/' .. router.name) or ''
 
   return {
-    item = self:unwrap_item(),
+    item = this:unwrap_item(),
     route = route,
     to = router_path .. '/' .. route.path
   }
