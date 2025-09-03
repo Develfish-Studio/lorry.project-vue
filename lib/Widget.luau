@@ -3,10 +3,11 @@
 local Meta = require('@lorry.utils/lib/Meta')
 local Project = require('@lorry.project/lib/Project')
 local Wrapper = require('@lorry.project/lib/Wrapper')
+local PartTypes = require('./Part/PartTypes')
 
 local Widget = {}
 
-export type Widget = typeof(Widget) & Wrapper.Unwrappable<Unwrapped>
+export type Widget = typeof(Widget) & PartTypes.Fieldset & Wrapper.Unwrappable<Unwrapped>
 
 export type WidgetProps = {
   project: Project.Project,
@@ -15,7 +16,7 @@ export type WidgetProps = {
 
 export type UnwrappedWidget = Wrapper.UnwrappedName
 
-export type Unwrapped = {
+export type Unwrapped = PartTypes.UnwrappedChild & {
   project: Project.UnwrappedProject,
   widget: UnwrappedWidget
 }
@@ -46,6 +47,11 @@ function Widget:unwrap(): Unwrapped
     project = this.project:unwrap_project(),
     widget = this:unwrap_widget(),
   }
+end
+
+function Widget:get_name(): string
+  local this = self::WidgetImpl
+  return this.name
 end
 
 return Widget

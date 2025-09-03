@@ -1,36 +1,43 @@
 --!strict
 
 local Meta = require('@lorry.utils/lib/Meta')
+local Project = require('@lorry.project/lib/Project')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Query = require('../Query/Query')
+local Remote = require('../Transport/Remote')
+local Request = require('../Transport/Request/Request')
 local Column = require('./Column')
 local Handle = require('./Handle')
+local PartTypes = require('../Part/PartTypes')
+local GridTypes = require('./GridTypes')
 
 local Grid = {
   Column = Column,
   Handle = Handle,
 }
 
-export type Grid = typeof(Grid)
+export type Grid = typeof(Grid) & PartTypes.Grid & Wrapper.Unwrappable<Unwrapped>
 
 export type GridProps = {
   query: Query.Query,
   name: string,
-  columns: {Column.Column},
-  handles: {Handle.Handle},
+  columns: {GridTypes.Column},
+  handles: {GridTypes.Handle},
 }
 
 export type UnwrappedGrid = Wrapper.UnwrappedName
 
-export type Unwrapped = {
+export type Unwrapped = PartTypes.UnwrappedChild & {
+  project: Project.UnwrappedProject,
+  remote: Remote.UnwrappedRemote,
+  request: Request.UnwrappedRequest,
+  query: Query.UnwrappedQuery,
   grid: UnwrappedGrid,
+  columns: {GridTypes.UnwrappedChild},
+  handles: {GridTypes.UnwrappedChild},
 }
 
 export type GridImpl = Grid & GridProps
-
-export type AnyChild =
-  | Column.Column
-  | Handle.Handle
 
 function Grid:new(o: GridProps): Grid
   return Meta:type(o, self, "Grid")
@@ -47,7 +54,7 @@ function Grid:from_query(query: Query.Query, name: string): Grid
     })
 end
 
-function Grid:setup(children: {AnyChild}): Grid
+function Grid:setup(children: {GridTypes.AnyChild}): Grid
   local this = self::GridImpl
   for _, child in children do
     this:with_child(child)
@@ -55,7 +62,7 @@ function Grid:setup(children: {AnyChild}): Grid
   return this
 end
 
-function Grid:with_child(child: AnyChild): Grid
+function Grid:with_child(child: GridTypes.AnyChild): Grid
   local this = self::GridImpl
   local tag = Meta:typeof(child)
   if tag == 'Grid.Column' then
@@ -87,6 +94,11 @@ function Grid:unwrap(): Unwrapped
     columns = Wrapper:unwrap_array(this.columns),
     handles = Wrapper:unwrap_array(this.handles),
   }
+end
+
+function Grid:get_name(): string
+  local this = self::GridImpl
+  return this.name
 end
 
 return Grid

@@ -18,10 +18,6 @@ local Page = {
 
 export type Page = typeof(Page) & Wrapper.Unwrappable<Unwrapped>
 
--- export type AnyNode =
---   | Heading.Heading
---   | Section.Section
-
 export type Layout = {
   flex: boolean
 }

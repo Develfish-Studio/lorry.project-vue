@@ -3,10 +3,11 @@
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Symbol = require('../Control/Symbol')
+local GridTypes = require('../Grid/GridTypes')
 
 local Column = {}
 
-export type Column = typeof(Column) & Wrapper.Unwrappable<Unwrapped>
+export type Column = typeof(Column) & GridTypes.Column & Wrapper.Unwrappable<Unwrapped>
 
 export type ColumnKind =
   | 'path'
@@ -33,7 +34,7 @@ export type UnwrappedColumn = Wrapper.UnwrappedName & {
   template: string?,
 }
 
-export type Unwrapped = {
+export type Unwrapped = GridTypes.UnwrappedChild & {
   column: UnwrappedColumn,
   symbol: Symbol.UnwrappedSymbol?,
   variables: {Variable}

@@ -2,9 +2,8 @@
 
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
-local Grid = require('../Grid/Grid')
-local Toolbar = require('../Toolbar/Toolbar')
 local PageTypes = require('./PageTypes')
+local PartTypes = require('../Part/PartTypes')
 
 local Section = {}
 
@@ -58,44 +57,44 @@ function Section:from(kind: SectionKind, name: string): Section
   })
 end
 
-function Section:from_grid(grid: Grid.Grid): Section
+function Section:from_grid(grid: PartTypes.Grid): Section
   assert(grid ~= nil)
   return Section:new({
     kind = 'grid',
-    name = grid.name,
+    name = grid:get_name(),
     component = grid,
     variables = Meta:array {},
     roles = Meta:array {}
   })
 end
 
-function Section:from_fieldset(fieldset: Fieldset.Fieldset)
+function Section:from_fieldset(fieldset: PartTypes.Fieldset)
   assert(fieldset ~= nil)
   return Section:new({
     kind = 'fieldset',
-    name = fieldset.name,
+    name = fieldset:get_name(),
     component = fieldset,
     variables = Meta:array {},
     roles = Meta:array {}
   })
 end
 
-function Section:from_widget(widget: Widget.Widget): Section
+function Section:from_widget(widget: PartTypes.Widget): Section
   assert(widget ~= nil)
   return Section:new({
     kind = 'widget',
-    name = widget.name,
+    name = widget:get_name(),
     component = widget,
     variables = Meta:array {},
     roles = Meta:array {}
   })
 end
 
-function Section:from_toolbar(toolbar: Toolbar.Toolbar): Section
+function Section:from_toolbar(toolbar: PartTypes.Toolbar): Section
   assert(toolbar ~= nil)
   return Section:new({
     kind = 'toolbar',
-    name = toolbar.name,
+    name = toolbar:get_name(),
     component = toolbar,
     variables = Meta:array {},
     roles = Meta:array {}

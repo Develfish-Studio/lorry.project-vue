@@ -3,10 +3,12 @@
 local Meta = require('@lorry.utils/lib/Meta')
 local Wrapper = require('@lorry.project/lib/Wrapper')
 local Action = require('../Action/Action')
+local ActionTypes = require('../Action/ActionTypes')
+local GridTypes = require('../Grid/GridTypes')
 
 local Handle = {}
 
-export type Handle = typeof(Handle) & Wrapper.Unwrappable<Unwrapped>
+export type Handle = typeof(Handle) & GridTypes.Handle & Wrapper.Unwrappable<Unwrapped>
 
 export type Message = {
   event: string,
@@ -14,7 +16,7 @@ export type Message = {
 }
 
 export type HandleProps = {
-  action: Action.Action,
+  action: ActionTypes.Action,
   name: string,
   icon: string?,
   expression: string?,
@@ -27,7 +29,7 @@ export type UnwrappedHandle = Wrapper.UnwrappedName & {
   expression: string?,
 }
 
-export type Unwrapped = {
+export type Unwrapped = GridTypes.UnwrappedChild & {
   handle: UnwrappedHandle,
   action: Action.UnwrappedAction
 }
@@ -38,7 +40,7 @@ function Handle:new(o: HandleProps): Handle
   return Meta:type(o, self, "Grid.Handle")
 end
 
-function Handle:from(action: Action.Action, name: string): Handle
+function Handle:from(action: ActionTypes.Action, name: string): Handle
   assert(name ~= nil)
   return Handle:new({
     action = action,
@@ -89,9 +91,10 @@ end
 
 function Handle:unwrap(): Unwrapped
   local this = self::HandleImpl
+  local action = this.action::Action.ActionImpl
   return {
     handle = this:unwrap_handle(),
-    action = this.action:unwrap_action(),
+    action = action:unwrap_action(),
     on_failure = this.on_failure,
     on_success = this.on_success,
   }

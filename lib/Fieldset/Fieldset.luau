@@ -7,12 +7,13 @@ local Field = require('./Field')
 local Query = require('../Query/Query')
 local Request = require('../Transport/Request/Request')
 local Remote = require('../Transport/Remote')
+local PartTypes = require('../Part/PartTypes')
 
 local Fieldset = {
   Field = Field,
 }
 
-export type Fieldset = typeof(Fieldset) & Wrapper.Unwrappable<Unwrapped>
+export type Fieldset = typeof(Fieldset) & PartTypes.Fieldset & Wrapper.Unwrappable<Unwrapped>
 
 export type FieldsetProps = {
   query: Query.Query,
@@ -22,7 +23,7 @@ export type FieldsetProps = {
 
 export type UnwrappedFieldset = Wrapper.UnwrappedName
 
-export type Unwrapped = {
+export type Unwrapped = PartTypes.UnwrappedChild & {
   project: Project.UnwrappedProject,
   fieldset: UnwrappedFieldset,
   query: Query.UnwrappedQuery,
@@ -83,6 +84,11 @@ function Fieldset:unwrap(): Unwrapped
     fieldset = this:unwrap_fieldset(),
     fields = Wrapper:unwrap_array(this.fields),
   }
+end
+
+function Fieldset:get_name(): string
+  local this = self::FieldsetImpl
+  return this.name
 end
 
 return Fieldset

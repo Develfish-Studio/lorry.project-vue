@@ -11,6 +11,7 @@ local Sorter = require('./Sorter')
 local Handle = require('./Handle')
 local Column = require('./Column')
 local ToolbarTypes = require('./ToolbarTypes')
+local PartTypes = require('../Part/PartTypes')
 
 local Toolbar = {
   Filter = Filter,
@@ -19,7 +20,7 @@ local Toolbar = {
   Column = Column,
 }
 
-export type Toolbar = typeof(Toolbar)
+export type Toolbar = typeof(Toolbar) & PartTypes.Toolbar & Wrapper.Unwrappable<Unwrapped>
 
 export type ToolbarProps = {
   query: Query.Query,
@@ -32,7 +33,7 @@ export type ToolbarProps = {
 
 export type UnwrappedToolbar = Wrapper.UnwrappedName
 
-export type Unwrapped = {
+export type Unwrapped = PartTypes.UnwrappedChild & {
   project: Project.UnwrappedProject,
   remote: Remote.UnwrappedRemote,
   request: Request.UnwrappedRequest,
@@ -109,6 +110,11 @@ function Toolbar:unwrap(): Unwrapped
     handles = Wrapper:unwrap_array(this.handles),
     columns = Wrapper:unwrap_array(this.columns),
   }
+end
+
+function Toolbar:get_name(): string
+  local this = self::ToolbarImpl
+  return this.name
 end
 
 return Toolbar
