@@ -1,8 +1,8 @@
 {
   "aliases": {
     "root": "./",
-    "lorry.testing": "../testing/",
+    "lorry.project": "../project/",
     "lorry.utils": "../utils/",
-    "lorry.project": "../project/"
+    "lorry.testing": "../testing/"
   }
 }
