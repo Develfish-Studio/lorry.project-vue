@@ -2,52 +2,6 @@ name: lorry.project-vue
 luau:
   aliases:
     root: .
-actions:
-  test:
-    path: actions/test.luau
-scrolls:
-  root:
-    path: scrolls/root
-  router:
-    path: scrolls/router
-  menu:
-    path: scrolls/menu
-  remote:
-    path: scrolls/remote
-  request:
-    path: scrolls/request
-  grid:
-    path: scrolls/grid
-  fieldset:
-    path: scrolls/fieldset
-  toolbar:
-    path: scrolls/toolbar
-  select:
-    path: scrolls/select
-  search:
-    path: scrolls/search
-  upload_s3:
-    path: scrolls/upload_s3
-  editor_js:
-    path: scrolls/editor_js
-  symbol:
-    path: scrolls/symbol
-  page:
-    path: scrolls/page
-  view:
-    path: scrolls/view
-  docker:
-    path: scrolls/docker
-  widget:
-    path: scrolls/widget
-  dialog:
-    path: scrolls/dialog
-  action:
-    path: scrolls/action
-  query:
-    path: scrolls/query
-  structure:
-    path: scrolls/structure
 dependencies:
   lorry.utils:
     uri: git@github.com:Develfish-Studio/lorry.utils.git
