@@ -1,7 +1,4 @@
 name: lorry.project-vue
-luau:
-  aliases:
-    root: .
 dependencies:
   lorry.utils:
     uri: git@github.com:Develfish-Studio/lorry.utils.git
